@@ -1,0 +1,24 @@
+3.1
+[ROOTPATH]https://raw.githubusercontent.com/DaxSoft/Skyrim-UI/master/Data/Plugins/Skyrim/skyrim_ui_module.rb<>skyrim_ui_module.rb
+https://github.com/DaxSoft/Skyrim-UI/raw/master/Data/Plugins/Skyrim/skyrim_ui_.rb<>skyrim_ui_.rb<>Skyrim
+https://github.com/DaxSoft/Skyrim-UI/raw/master/Data/Plugins/Skyrim/skyrim_ui_title.rb<>skyrim_ui_title.rb<>Skyrim
+https://github.com/DaxSoft/Skyrim-UI/raw/master/Data/Plugins/Skyrim/skyrim_ui_main_menu.rb<>skyrim_ui_main_menu.rb<>Skyrim
+https://raw.githubusercontent.com/DaxSoft/Skyrim-UI/master/Data/Plugins/mouse_window_selectable.rb<>mouse_window_selectable.rb
+[PICTURE]https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/BackBar.png<>BackBar.png<>Skyrim
+[PICTURE]https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/BackBar2.png<>BackBar2.png<>Skyrim
+[PICTURE]https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/Background.png<>Background.png<>Skyrim
+[PICTURE]https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/Cursor.png<>Cursor.png<>Skyrim
+[PICTURE]https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/HpBar.png<>HpBar.png<>Skyrim
+[PICTURE]https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/HpBar2.png<>HpBar2.png<>Skyrim
+[PICTURE]https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/Icon.png<>Icon.png<>Skyrim
+[PICTURE]https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/Layout%20Item.png<>Layout Item.png<>Skyrim
+[PICTURE]https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/SkillBar.png<>SkillBar.png<>Skyrim
+[PICTURE]https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/SkillBar2.png<>SkillBar2.png<>Skyrim
+[PICTURE]https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/SkinUIMenu.png<>SkinUIMenu.png<>Skyrim
+[PICTURE]https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/SkinUIMenu2.png<>SkinUIMenu2.png<>Skyrim
+[PICTURE]https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/Windows%201.png<>Windows 1.png<>Skyrim
+[PICTURE]https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/Windows%202.png<>Windows 2.png<>Skyrim
+[PICTURE]https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/Windows%203.png<>Windows 3.png<>Skyrim
+[PICTURE]https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/XpBar.png<>XpBar.png<>Skyrim
+[PICTURE]https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/XpBar2.png<>XpBar2.png<>Skyrim
+[PICTURE]https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/smoke3.png<>smoke3.png<>Skyrim
