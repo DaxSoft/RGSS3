@@ -1,8 +1,8 @@
 //=============================================================================
 // Ultimate Sensor Event
 // By Kvothe
-// ultimate_sensor_event.js
-// Version: 1.0
+// UltimateSensorEvent.js
+// Version: 1.0.0
 // Free for commercial and non commercial use.
 //=============================================================================
 var Imported = Imported || {};
@@ -46,6 +46,46 @@ Kvothe.UltimateSensorEvent = {};
   * this.sCircle(distance, id) Verifica em forma de círculos.
 
   * ===========================================================================
+*/
+//=============================================================================
+// English:Plugin
+//=============================================================================
+/*:en-US
+* @author Kvothe
+* @plugindesc  Add system of sensor in the events.
+*
+* @help
+* Contact:
+*     email dax-soft@live.com
+*     website http://www.dax-soft.weebly.com
+* ===========================================================================
+* Commands: Use the commands in the conditions; using the command of the Script.
+* ===========================================================================
+* Values .
+*     distance : Distance in tiles.
+*     id : Event ID. No need to set if you want to use in the event
+* which is being called the command.
+* ===========================================================================
+* this.sArea(distance, id)  Check in form of the area
+* this.sFront(distance, id) Sensor who checks if it's in down of the event
+* this.sAgo(distance, id) Sensor who checks if it's in up of the event
+* this.sLeft(distance, id) Sensor who checks if it's in left of the event
+* this.sRight(distance, id) Sensor who checks if it's in right of the event
+* this.sAbout(id) Sensor who checks if it's about the event
+* this.sCross(distance, id) Sensor who checks in form of the cross
+* this.sVision(distance, id) Sensor who checks if it's only in vision of the event
+* this.sBehind(distance, id) Sensor who checks if it's just behind of the event
+* this.vLeft(distance, id) Sensor who checks if it's just the left of event
+* this.vRight(distance, id) Sensor who checks if it's just the right of event
+* this.dRight(distance, id) Sensor who checks if it's in the right-upper of event.
+* this.dLeft(distance, id) Sensor who checks if it's in the left-upper of event.
+* this.iRight(distance, id) Sensor who checks if it's in the right-bottom of event.
+* this.iLeft(distance, id) Sensor who checks if it's in the left-bottom of event
+* this.sDiagonal(distance, id) Sensor who checks if it's in all side on diagonal
+* this.vDiagonal(distance, id) Sensor who checks if it's vision diagonal according with event.
+* this.sCircle(distance, id) Sensor who checks if it's in form of circle
+
+* ===========================================================================
 */
 (function($) {
   'use strict';
