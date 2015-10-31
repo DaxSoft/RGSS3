@@ -2,7 +2,7 @@
 // Ultimate Sensor Event
 // By Kvothe
 // UltimateSensorEvent.js
-// Version: 1.0.0
+// Version: 1.1.0
 // Free for commercial and non commercial use.
 //=============================================================================
 var Imported = Imported || {};
@@ -43,7 +43,10 @@ Kvothe.UltimateSensorEvent = {};
   * this.sDiagonal(distance, id) Verifica de todos os lados na diagonal.
   * this.vDiagonal(distance, id) Verifica se está na visão do evento, na diagonal.
   * this.sCircle(distance, id) Verifica em forma de círculos.
-
+  * ===========================================================================
+  * Atenção : Os items — sFront, sAgo, sLeft, sRight — são estáticos. Serão fixos
+  * independete da direção em que o evento estiver.
+  * Os items — sVision, sBehind, vLeft, vRight — São ativos somente em linha reta.
   * ===========================================================================
 */
 //=============================================================================
@@ -55,7 +58,6 @@ Kvothe.UltimateSensorEvent = {};
 *
 * @help
 * Contact:
-*     email dax-soft@live.com
 *     website http://www.dax-soft.weebly.com
 * ===========================================================================
 * Commands: Use the commands in the conditions; using the command of the Script.
@@ -83,9 +85,13 @@ Kvothe.UltimateSensorEvent = {};
 * this.sDiagonal(distance, id) Sensor who checks if it's in all side on diagonal
 * this.vDiagonal(distance, id) Sensor who checks if it's vision diagonal according with event.
 * this.sCircle(distance, id) Sensor who checks if it's in form of circle
-
+* ===========================================================================
+* Attention : the items — sFront, sAgo, sLeft, sRight — are static. Will fixed
+* independently of directions in who the events stay.
+* the items — sVision, sBehind, vLeft, vRight — In a line straight.
 * ===========================================================================
 */
+
 (function($) {
   'use strict';
   /**
