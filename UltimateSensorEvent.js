@@ -199,9 +199,9 @@ Kvothe.UltimateSensorEvent = {};
     // body...
     var _event = $.eventMap(eventId, this._eventId);
     if (($gamePlayer.x == _event.x)) {
-      for (var i = _event.y; i > _event.y - distance-1; i--) {
+      for (var i = _event.y; i > _event.y - distance; i--) {
         if ($gameMap.isPassable(_event.x, i, 8))
-          if ($gamePlayer.y == i+distance) return true;
+          if ($gamePlayer.y == (i+(distance))-1) return true;
       }
     }
     return false;
