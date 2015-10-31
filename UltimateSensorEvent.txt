@@ -1,0 +1,300 @@
+#==============================================================================
+# • Ultimate Sensor Event
+#==============================================================================
+# Autor: Dax
+# Requerimento: Dax Core
+# Versão: 4.0
+# Site: www.dax-soft.weebly.com
+#==============================================================================
+# @tiagoms : Feedback que ajudou a incrementar mais.
+#==============================================================================
+# • Descrição:
+#------------------------------------------------------------------------------
+#  Um sistema de sensor, onde permite diferentes tipos de formas dos eventos
+# "sentir" a presença do jogador.
+#==============================================================================
+# • Como usar: Utilze os comandos em condições.
+#------------------------------------------------------------------------------
+#  a : área em quadrados(tiles) em que o sensor será ativado. Por padrão é 1
+#  b : ID do evento. Se definir nada, é o evento local. Por padrão é o evento local.
+#------------------------------------------------------------------------------
+# • [1.0]
+# 1 * Primeiro tipo de sensor, e o sensor de área. O comando para usar esse
+# tipo de sensor é o : sarea?(a, b) :
+# 2 * Sensor que verifica se está em baixo do evento..: sfront?(a, b)
+# 3 * Sensor que verifica se está em cima do evento..: sago?(a, b)
+# 4 * Sensor que verifica se está a esquerda do evento: sleft?(a, b)
+# 5 * Sensor que verifica se está a direita do evento: sright?(a, b)
+# 6 * Sensor que faz uma verificação em forma de cruz: scross?(a, b)
+# 7 * Sensor que verifica se está somente na visão do evento: svision?(a, b)
+# 8 * Sensor que verifica se está sobre o evento.. sabout?(b)
+# • [2.0~2.5] :
+# 9 * Sensor que verifica se está somente atrás do evento. sbehind?(a, b)
+# 10 * Sensor que verifica se está somente a esquerda do evento. vleft?(a, b)
+# 11 * Sensor que verifica se está somente a direita do evento. vright?(a, b)
+# • [3.0] :
+# 14 * Sensor que verifica a esquerda-superior na diagonal. dsleft?(a, b)
+# 15 * Sensor que verifica a esquerda-inferior na diagonal. dileft?(a, b)
+# 16 * Sensor que verifica a direita-superior na diagonal. dsright?(a, b)
+# 17 * Sensor que verifica a direita-inferior na diagonal. diright?(a, b)
+# 18 * Sensor que verifica em todos os lados na diagonal. diagonal?(a, b)
+# 19 * Sensor que verifica em forma de círculo. scircle?(a, b)
+# 20 * Sensor que verifica a diagonal de acordo com a visão do evento. vdiagonal?(a, b)
+# • [3.5] :
+# 21 * Sensor que verifica em retângulo/quadrado na visão do npc.
+# De acordo com a visão do jogador. scubic?(a, b)
+# • [4.0] :
+# Atualizado para a nova versão do core.
+#------------------------------------------------------------------------------
+# * Atenção, o item 2 á 5 são estáticos, ou seja,
+# serão fixos independente da direção em que o evento esteja
+# * Os itens 7, 9, 10, 11: Em uma linha reta
+#==============================================================================
+Dax.register(:ultimate_sensor_event, "Dax", 4.0) {
+  #==============================================================================
+  # • Game_Interpreter
+  #==============================================================================
+  class Game_Interpreter
+    #----------------------------------------------------------------------------
+    # • Inicialização do objeto
+    #----------------------------------------------------------------------------
+    alias :_sensorEvent_init :initialize
+    def initialize(*args)
+      _sensorEvent_init
+      @_nozero = ->(number) { return (number < 0 || number.nil? ? 1 : number.to_i) }
+    end
+    #----------------------------------------------------------------------------
+    # • Pega as coordenadas do evento é do player.
+    #----------------------------------------------------------------------------
+    def block_sensor(b=nil)
+      event = $game_map.events[b.nil? ? @event_id : Integer(b)]
+      yield(event.x, event.y, $game_player.x, $game_player.y)
+    end
+    #----------------------------------------------------------------------------
+    # • Sensor por área.
+    #----------------------------------------------------------------------------
+    def sarea?(a=1, b=nil)
+      a = @_nozero[a]
+      distance = DMath.distance_sensor($game_player, $game_map.events[b.nil? ? @event_id : Integer(b)])
+      return (distance <= a)
+    end  
+    #----------------------------------------------------------------------------
+    # • Sensor na frente do evento.
+    #----------------------------------------------------------------------------
+    def sfront?(a=1, b=nil)
+      a = @_nozero[a]
+      block_sensor(b) { |ex, ey, px, py|
+        return unless px == ex
+        (ey..(ey + a)).each { |y|
+          break unless $game_map.passable?(ex, y, 2)
+          return true if py == y
+        }
+      }
+      return false
+    end
+    #----------------------------------------------------------------------------
+    # • Sensor atrás do evento.
+    #----------------------------------------------------------------------------
+    def sago?(a=1, b=nil)
+      a = @_nozero[a]
+      block_sensor(b) { |ex, ey, px, py|
+        return unless px == ex
+        ey.downto(ey - a).each { |y|
+          break unless $game_map.passable?(ex, y, 8)
+          return true if py == y
+        }
+      }
+      return false
+    end
+    #----------------------------------------------------------------------------
+    # • Sensor quando estiver sobre o evento.
+    #----------------------------------------------------------------------------
+    def sabout?(b=nil)
+      block_sensor(b) { |ex, ey, px, py| return true if px == ex && py == ey }
+      return false
+    end
+    #----------------------------------------------------------------------------
+    # • Sensor quando estiver a direita do evento.
+    #----------------------------------------------------------------------------
+    def sright?(a=1, b=nil)
+      a = @_nozero[a]
+      block_sensor(b) {|ex, ey, px, py|
+        return unless py == ey
+        (ex..(ex + a)).each { |x|
+          break unless $game_map.passable?(x, ey, 6)
+          return true if px == x
+        }
+      }
+      return false
+    end
+    #----------------------------------------------------------------------------
+    # • Sensor quando estiver a esquerda do evento.
+    #----------------------------------------------------------------------------
+    def sleft?(a=1, b=nil)
+      a = @_nozero[a]
+      block_sensor(b) {|ex, ey, px, py|
+        return unless py == ey
+        ex.downto(ex - a).each { |x|
+          break unless $game_map.passable?(x, ey, 4)
+          return true if px == x
+        }
+      }
+      return false
+    end
+    #----------------------------------------------------------------------------
+    # • Sensor em forma de cruz.
+    #----------------------------------------------------------------------------
+    def scross?(a=1, b=nil)
+      sfront?(a, b) || sago?(a, b) || sright?(a, b) || sleft?(a, b)
+    end
+    #----------------------------------------------------------------------------
+    # • Sensor que verifica somente a visão do evento.
+    #----------------------------------------------------------------------------
+    def svision?(a=1, b=nil)
+      case $game_map.events[b.nil? ? @event_id : Integer(b)].direction
+      when 2 then sfront?(a, b)
+      when 4 then sleft?(a, b)
+      when 6 then sright?(a, b)
+      when 8 then sago?(a, b)
+      end
+    end
+    #----------------------------------------------------------------------------
+    # • Sensor que verifica se está somente atrás do evento.
+    #----------------------------------------------------------------------------
+    def sbehind?(a=1, b=nil)
+      case $game_map.events[b.nil? ? @event_id : Integer(b)].direction
+      when 2 then sago?(a, b)
+      when 4 then sright?(a, b)
+      when 6 then sleft?(a, b)
+      when 8 then sfront?(a, b)
+      end
+    end
+    #----------------------------------------------------------------------------
+    # • Sensor que verifica se está somente a esquerda do evento.
+    #----------------------------------------------------------------------------
+    def vleft?(a=1, b=nil)
+      case $game_map.events[b.nil? ? @event_id : Integer(b)].direction
+      when 2 then sright?(a, b)
+      when 4 then sfront?(a, b)
+      when 6 then sago?(a, b)
+      when 8 then sleft?(a, b)
+      end
+    end
+    #----------------------------------------------------------------------------
+    # • Sensor que verifica se está somente a direita do evento.
+    #----------------------------------------------------------------------------
+    def vright?(a=1, b=nil)
+      case $game_map.events[b.nil? ? @event_id : Integer(b)].direction
+      when 2 then sleft?(a, b)
+      when 4 then sfront?(a, b)
+      when 6 then sago?(a, b)
+      when 8 then sright?(a, b)
+      end
+    end
+    #----------------------------------------------------------------------------
+    # • Sensor que verifica o lado esquerdo-superior na diagonal.
+    #----------------------------------------------------------------------------
+    def dsleft?(a=1, b=nil)
+      a = @_nozero[a]
+      block_sensor(b) {|ex, ey, px, py|
+        0.upto(a) { |i| return true if px == (ex - i) and py == (ey - i) }
+      }
+      return false
+    end
+    #----------------------------------------------------------------------------
+    # • Sensor que verifica o lado direito-superior na diagonal.
+    #----------------------------------------------------------------------------
+    def dsright?(a=1, b=nil)
+      a = @_nozero[a]
+      block_sensor(b) {|ex, ey, px, py|
+        0.upto(a) { |i| return true if px == (ex + i) and py == (ey - i) }
+      }
+      return false
+    end
+    #----------------------------------------------------------------------------
+    # • Sensor que verifica o lado esquerdo-inferior na diagonal.
+    #----------------------------------------------------------------------------
+    def dileft?(a=1, b=nil)
+      a = @_nozero[a]
+      block_sensor(b) {|ex, ey, px, py|
+        0.upto(a) { |i| return true if px == (ex - i) and py == (ey + i) }
+      }
+      return false
+    end
+    #----------------------------------------------------------------------------
+    # • Sensor que verifica o lado direito-inferior na diagonal.
+    #----------------------------------------------------------------------------
+    def diright?(a=1, b=nil)
+      a = @_nozero[a]
+      block_sensor(b) {|ex, ey, px, py|
+        0.upto(a) { |i| return true if px == (ex + i) and py == (ey + i) }
+      }
+      return false
+    end
+    #----------------------------------------------------------------------------
+    # • Sensor que verifica a diagonal em todos os lados.
+    #----------------------------------------------------------------------------
+    def diagonal?(a=1, b=nil)
+      dsleft?(a, b) || dsright?(a, b) || dileft?(a, b) || diright?(a, b)
+    end
+    #----------------------------------------------------------------------------
+    # • Sensor que verifica a diagonal de acordo com a visão do evento.
+    #----------------------------------------------------------------------------
+    def vdiagonal?(a=1, b=nil)
+      case $game_map.events[b.nil? ? @event_id : Integer(b)].direction
+      when 2 then dileft?(a, b) || diright?(a, b)
+      when 4 then dsleft?(a, b) || dileft?(a, b)
+      when 6 then dsright?(a, b) || diright?(a, b)
+      when 8 then dsleft?(a, b) || dsright?(a, b)
+      end
+    end
+    #----------------------------------------------------------------------------
+    # • Sensor que verifica em forma de círculo.
+    #----------------------------------------------------------------------------
+    def scircle?(a=2, b=nil)
+      a = a < 2 ? 2 : a
+      diagonal?(a-1, b) || scross?(a, b)
+    end
+    #----------------------------------------------------------------------------
+    # • Sensor que verifica em retângulo/quadrado na visão do npc.
+    #----------------------------------------------------------------------------
+    def scubic?(a=3, b=nil)
+      a = @_nozero[a]
+      case $game_map.events[b.nil? ? @event_id : Integer(b)].direction
+      when 2 #back
+        block_sensor(b) {|ex, ey, px, py|
+          (ex - (a - 2)).upto(ex + (a - 2)).each { |x|
+            (ey).upto(ey+a).each { |y|
+              return true if px == x and py == y
+            }
+          }
+        }
+      when 4 #left
+        block_sensor(b) {|ex, ey, px, py|
+          a.next.times { |i|
+            ( ey - (a - 2) ).upto(ey+(a - 2)).each { |y|
+              return true if px == ex - i and py == y
+            }
+          }
+        }
+      when 6 #right
+        block_sensor(b) {|ex, ey, px, py|
+          a.next.times { |i|
+            ( ey - (a - 2) ).upto(ey+(a - 2)).each { |y|
+              return true if px == ex + i and py == y
+            }
+          }
+        }
+      when 8 #up
+        block_sensor(b) {|ex, ey, px, py|
+          (ex - (a - 2)).upto(ex + (a - 2)).each { |x|
+            (ey).downto(ey-a).each { |y|
+              return true if px == x and py == y
+            }
+          }
+        }
+      end
+      return false
+    end
+  end
+}
