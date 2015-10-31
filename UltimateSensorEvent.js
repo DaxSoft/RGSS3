@@ -14,7 +14,6 @@ Kvothe.UltimateSensorEvent = {};
   *
   * @help
   * Caso tenha dúvidas, contate os seguintes meios.
-  *     email dax-soft@live.com
   *     website http://www.dax-soft.weebly.com
   * ===========================================================================
   * Comandos . Use os comandos nas condições; utilizando o comando Script.
