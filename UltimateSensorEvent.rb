@@ -66,10 +66,10 @@
 # T : Esperar uma certa quantidade de tempo para retomar ao som. Opcional.
 #     Defina em segundos.
 # Quanto maior, menor o volume do som.
-# variável $ulsound = X
+# variável ULSE.sound(x)
 # Comando: ulse_sound(B, A, C, D, T, DS)
 # [6.0] :
-#   Agora permite que o sensor do evento, possa ser ativa por outro evento. 
+#   Agora permite que o sensor do evento, possa ser ativa por outro evento.
 #------------------------------------------------------------------------------
 # * Atenção, o item 2 á 5 são estáticos, ou seja,
 # serão fixos independente da direção em que o evento esteja
