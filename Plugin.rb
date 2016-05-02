@@ -73,6 +73,33 @@ Plugin.register({
 # [2.1]
 #    Novo método de baixar.
 #==============================================================================
+#==============================================================================
+# • Powershell
+#==============================================================================
+Dax.register(:powershell, "dax", 1.0) {
+module Powershell
+  extend self
+  #----------------------------------------------------------------------------
+  # • Command
+  #----------------------------------------------------------------------------
+  def run(cmd)
+    system("powershell.exe " << cmd)
+  end
+  #----------------------------------------------------------------------------
+  # • Baixar arquivos da internet com a função wget
+  #     link : url
+  #     output : filename and dest
+  #     ext : commands
+  #       -v : show progress.
+  #       -c : continuar;
+  #       -b : in background
+  #----------------------------------------------------------------------------
+  def wget(link, output, ext="-v")
+    cmd = "wget #{ext} #{link} -OutFile #{output}"
+    self.run(cmd)
+  end
+end
+}
 Dax.register(:plugin, "dax", 2.1) {
   $ROOT_PATH = ->(filename, dir="") { "#{Dir.pwd}/Data/Plugins/#{dir}#{filename}" }
   #============================================================================
