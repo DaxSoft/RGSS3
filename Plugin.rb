@@ -2,7 +2,7 @@
 # • Plugin
 #==============================================================================
 # Autor: Dax
-# Versão: 2.0
+# Versão: 2.1
 # Site: www.dax-soft.weebly.com
 # Requerimento: Dax Core
 # tiagoms : Ajudou dando feedback.
@@ -70,8 +70,10 @@ Plugin.register({
 # [2.0]
 #    Sistema funcional.
 #    Novo método de registrar o plugin para o download.
+# [2.1]
+#    Novo método de baixar.
 #==============================================================================
-Dax.register(:plugin, "dax", 2.0) {
+Dax.register(:plugin, "dax", 2.1) {
   $ROOT_PATH = ->(filename, dir="") { "#{Dir.pwd}/Data/Plugins/#{dir}#{filename}" }
   #============================================================================
   # • Plugin
@@ -86,7 +88,7 @@ Dax.register(:plugin, "dax", 2.0) {
     #--------------------------------------------------------------------------
     # • Constants
     #--------------------------------------------------------------------------
-    VERSION = "2.0"
+    VERSION = "2.1"
     TEMP = "./temp.txt"
     ERROR = true # mostrar erros.
     MSG = {
@@ -180,7 +182,8 @@ Dax.register(:plugin, "dax", 2.0) {
       @@register.each_pair { |key, value|
         # => generator temp file
         @@download.delete([*key])
-        Network.link_download(value.get(:link), TEMP)
+        #Network.link_download(value.get(:link), TEMP)
+        Powershell.wget(value.get(:link), TEMP)
         tempFile = File.open(TEMP, "rb") 
         @@download[[*key]] = Plugin::Parse.read(tempFile.read)
         version = @@download[[*key]][:version]
@@ -240,29 +243,19 @@ Dax.register(:plugin, "dax", 2.0) {
       header = kd[:header]
       folder = kd[:folder]
       link = kd[:link]
-      Graphics.update
-      Graphics.wait(5)
-      begin
-        @@checkExist = true
-        catch(:exit) {
-          path = headerFilter(header)
-          path << folder
-          path << "/" unless path[path.size.pred] == "/"
-          Dir.mkdir(path) unless FileTest.directory?(path)
-          unless @@root_path[[*key]].is_a?(Array)
-            @@root_path[[*key]] << path + filename rescue @@root_path[[*key]] = path + filename
-          else
-            @@root_path[[*key]] = path + filename
-          end
-          Thread.new {
-            Network.link_download(link, path + filename)
-          }
-          sleep(0.1)
-        }
-        Graphics.wait(30)
-      rescue
-        msgbox($!) if ERROR
+      path = headerFilter(header)
+      path << folder
+      path << "/" unless path[path.size.pred] == "/"
+      Dir.mkdir(path) unless FileTest.directory?(path)
+      unless @@root_path[[*key]].is_a?(Array)
+        @@root_path[[*key]] << path + filename rescue @@root_path[[*key]] = path + filename
+      else
+        @@root_path[[*key]] = path + filename
       end
+      nfilename = filename.gsub(" ", "_")
+      Powershell.wget(link, "./" + nfilename, "-v")
+      Graphics.wait(30)
+      File.rename("./" + nfilename, path + filename) rescue nil
     end
     #--------------------------------------------------------------------------
     # • saveRegister
@@ -355,10 +348,6 @@ Dax.register(:plugin, "dax", 2.0) {
   #============================================================================
   # • Run
   #============================================================================
-  hresult = API::MessageBox.call(Plugin::MSG[:TITLE], Plugin::MSG[:clear], Plugin::MSG[:FORMAT])
-  if hresult == API::MessageBox::YES
-    %x(RunDll32.exe InetCpl.cpl, ClearMyTracksByProcess 8 )
-  end
   Plugin.run()
   Plugin.start()
 }
