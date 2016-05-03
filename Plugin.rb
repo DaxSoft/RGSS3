@@ -94,9 +94,8 @@ Dax.register(:plugin, "dax", 2.2, [[:powershell, "dax"]]) {
     ERROR = true # mostrar erros.
     MSG = {
       CONF: "Deseja verificar novas versões dos plugins?",
-      INFO: "Informações da versão atual:",
       DOWN_PLUGIN: "Você deseja baixar o plugin: <%s>, do autor: <%s>, versão: <%03s>",
-      NEW_UPDATE: "Uma nova atualização está disponível, do plugin: <%s>, do autor: <%s>, versão: <%03s>\n Você deseja baixá-la?",
+      NEW_UPDATE: "Uma nova atualização está disponível, do plugin: <%s>, do autor: <%s>, versão: <%03s>",
       NO_INTERNET: "Sem conexão com à internet",
       FORMAT: MessageBox::ICONINFORMATION|MessageBox::YESNO,
       TITLE: "Plugin Manager #{VERSION}",
@@ -196,8 +195,9 @@ Dax.register(:plugin, "dax", 2.2, [[:powershell, "dax"]]) {
         tempFile = File.open(TEMP, "rb") 
         @@download[[*key]] = Plugin::Parse.read(tempFile.read)
         version = @@download[[*key]][:version]
+        information = @@download[[*key]][:info] 
         puts "#{value[:name]}::\r\n\t temp version -> #{version}\r\n\t register version -> #{value[:version]}\r\n"
-        puts("#{MSG[:INFO]}\n\r#{value.get(:info)}")
+        MessageBox.call("#{value[:name]} #{version}", information, 0)
         # => check version
         if value[:version] == 0.0
           msg = sprintf(MSG[:DOWN_PLUGIN], value.get(:name), value.get(:author), version)
@@ -324,7 +324,7 @@ Dax.register(:plugin, "dax", 2.2, [[:powershell, "dax"]]) {
       content = $1
       @@hash[:version] = content.scan(REG["version"]).shift.shift.to_f rescue ""
       @@hash[:register] = content.scan(REG["register"]).shift.shift.to_s.split(/,/).collect! { |r|  r.to_s.lstrip.symbol } rescue ""
-      @@hash[:info] = content.scan(REG["info"]).shift.shift.to_s rescue ""
+      @@hash[:info] = str.scan(REG["info"]).shift.shift.to_s rescue ""
     end
     #--------------------------------------------------------------------------
     # • Checks all regexs
