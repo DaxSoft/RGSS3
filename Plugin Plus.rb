@@ -122,7 +122,16 @@ Dax.register(:plugin, "dax", 2.3, [[:powershell, "dax"]]) {
     #--------------------------------------------------------------------------
     def start()
       loadRegister() if FileTest.exist?("#{Dir.pwd}/Data/register.rvdata2")
-      @@root_path.each_value { |value| value.each { |i| load_script(i) rescue next } }
+      @@register.each_value { |value|
+        value[:path].each { |i|
+          load_script(i) rescue next
+        } rescue next
+      }
+#~       @@root_path.each_value { |value| 
+#~         value.each { |i| 
+#~           load_script(i) rescue next 
+#~         } 
+#~       }
     end
     #--------------------------------------------------------------------------
     # • Register the plugins
@@ -145,6 +154,7 @@ Dax.register(:plugin, "dax", 2.3, [[:powershell, "dax"]]) {
       return if registred?(hash[:name], hash[:author], hash[:version])
       @@register[[hash[:name], hash[:author]]] = hash
       @@download[[hash[:name], hash[:author]]] = []
+      @@register[[hash[:name], hash[:author]]][:path] = []
       @@root_path[[hash[:name], hash[:author]]] = []
     end
     #--------------------------------------------------------------------------
@@ -200,8 +210,7 @@ Dax.register(:plugin, "dax", 2.3, [[:powershell, "dax"]]) {
           msg = sprintf(MSG[:DOWN_PLUGIN], value.get(:name), value.get(:author), version)
           hresult = MessageBox.call(MSG[:TITLE], msg, MSG[:FORMAT])
         elsif version > value.get(:version)
-          @@root_path[[*key]].clear
-          @@root_path.delete([*key])
+          @@register[[*key]][:path] = []
           msg = sprintf(MSG[:NEW_UPDATE], value.get(:name), value.get(:author), version)
           hresult = MessageBox.call(MSG[:TITLE], msg, MSG[:FORMAT])
         end
@@ -217,9 +226,9 @@ Dax.register(:plugin, "dax", 2.3, [[:powershell, "dax"]]) {
         # => register new version and save
         tempFile.close
         File.delete(TEMP) if FileTest.exist?(TEMP)
-        saveRegister()
         Graphics.wait(30)
       }
+      saveRegister()
     end
     #--------------------------------------------------------------------------
     # • headerFilter
@@ -259,7 +268,10 @@ Dax.register(:plugin, "dax", 2.3, [[:powershell, "dax"]]) {
         nfname = "./" + fname.gsub(" ", "_")
         Powershell.wget(links[n], nfname, "-v") 
         Graphics.wait(30)
-        @@root_path[[*key]] << fpath if rkey == :files
+        if rkey == :files
+          @@register[[*key]][:path] << fpath
+        end
+        File.delete(fpath) if FileTest.exist?(fpath)
         File.rename(nfname, fpath) if FileTest.exist?(nfname)
       }
       Graphics.wait(30)
@@ -272,7 +284,6 @@ Dax.register(:plugin, "dax", 2.3, [[:powershell, "dax"]]) {
         export = ->() {
           content = {}
           content[:register] = @@register
-          content[:root_path] = @@root_path
           content
         }
         Marshal.dump(export.call, file)
@@ -391,7 +402,7 @@ Dax.register(:plugin, "dax", 2.3, [[:powershell, "dax"]]) {
   # • Insira aqui: Os registros dos plugin.
   #============================================================================
   Plugin.register(:hello_world, :dax, 0.0, "http://pastebin.com/raw/N2kusL0N")
-  Plugin.register(:steampunk_hud, :dax, 0.0, "http://pastebin.com/raw/mGjQMB95")
+  
   #============================================================================
   # • Run
   #============================================================================
