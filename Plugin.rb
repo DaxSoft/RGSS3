@@ -19,9 +19,8 @@
 # e um exemplo. Se tiver aprendido, e não tiver necessidade do tutorial.
 # Recomendo apagar o tutorial e o exemplo xD.
 =begin
-** Para registrar é muito simples. Você chama o método register do Plugin,
-e defini nele, dentro de uma hash {} as informações.
-Plugin.register({
+** Para registrar é muito simples. 
+Plugin.register(name, author, version, link)
         Você deve de definir o nome de registro do plugin.
         name:             :nome_de_registro, # Deste modo.
         Você deve de definir o autor do plugin.
@@ -31,7 +30,6 @@ Plugin.register({
         version:          1.0,
         Você deve de definir o link do plugin, onde o mesmo será baixado.
         link:             "url do link"
-})
 ** Agora, no LINK em que você definir, deve conter o seguinte:
 
 <plugin>
