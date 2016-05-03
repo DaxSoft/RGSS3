@@ -2,7 +2,7 @@
 # • Plugin
 #==============================================================================
 # Autor: Dax
-# Versão: 2.1
+# Versão: 2.2
 # Site: www.dax-soft.weebly.com
 # Requerimento: Dax Core
 # tiagoms : Ajudou dando feedback.
@@ -37,6 +37,7 @@ Plugin.register({
 <plugin>
   <version>VERSÃO DO PLUGIN</version>
   <register>REGISTRAR OS ARQUIVOS QUE SERÃO BAIXADO</register>
+  <info>Informações da versão atual.</info>
 </plugin>
 
 <NOME DO REGISTRO DO ARQUIVO PASTA[POR PADRÃO É ROOTPATH]>
@@ -72,35 +73,10 @@ Plugin.register({
 #    Novo método de registrar o plugin para o download.
 # [2.1]
 #    Novo método de baixar.
+# [2.2]
+#    Add da tag de informação.
 #==============================================================================
-#==============================================================================
-# • Powershell
-#==============================================================================
-Dax.register(:powershell, "dax", 1.0) {
-module Powershell
-  extend self
-  #----------------------------------------------------------------------------
-  # • Command
-  #----------------------------------------------------------------------------
-  def run(cmd)
-    system("powershell.exe " << cmd)
-  end
-  #----------------------------------------------------------------------------
-  # • Baixar arquivos da internet com a função wget
-  #     link : url
-  #     output : filename and dest
-  #     ext : commands
-  #       -v : show progress.
-  #       -c : continuar;
-  #       -b : in background
-  #----------------------------------------------------------------------------
-  def wget(link, output, ext="-v")
-    cmd = "wget #{ext} #{link} -OutFile #{output}"
-    self.run(cmd)
-  end
-end
-}
-Dax.register(:plugin, "dax", 2.1) {
+Dax.register(:plugin, "dax", 2.2, [[:powershell, "dax"]]) {
   $ROOT_PATH = ->(filename, dir="") { "#{Dir.pwd}/Data/Plugins/#{dir}#{filename}" }
   #============================================================================
   # • Plugin
@@ -115,10 +91,12 @@ Dax.register(:plugin, "dax", 2.1) {
     #--------------------------------------------------------------------------
     # • Constants
     #--------------------------------------------------------------------------
-    VERSION = "2.1"
+    VERSION = "2.2"
     TEMP = "./temp.txt"
     ERROR = true # mostrar erros.
     MSG = {
+      CONF: "Deseja verificar novas versões dos plugins?",
+      INFO: "Informações da versão atual:",
       DOWN_PLUGIN: "Você deseja baixar o plugin: <%s>, do autor: <%s>, versão: <%03s>",
       NEW_UPDATE: "Uma nova atualização está disponível, do plugin: <%s>, do autor: <%s>, versão: <%03s>\n Você deseja baixá-la?",
       NO_INTERNET: "Sem conexão com à internet",
@@ -162,7 +140,13 @@ Dax.register(:plugin, "dax", 2.1) {
     #       link: ""
     #    }
     #--------------------------------------------------------------------------
-    def register(hash)
+    def register(name, author, version, link)
+      hash = { 
+        name: name,
+        author: author, 
+        version: version,
+        link: link
+      }
       registerError(hash)
       return if registred?(hash[:name], hash[:author], hash[:version])
       @@register[[hash[:name], hash[:author]]] = hash
@@ -214,7 +198,8 @@ Dax.register(:plugin, "dax", 2.1) {
         tempFile = File.open(TEMP, "rb") 
         @@download[[*key]] = Plugin::Parse.read(tempFile.read)
         version = @@download[[*key]][:version]
-        puts " #{value[:name]}::\r\n\t temp version -> #{version}\r\n\t register version -> #{value[:version]}\r\n"
+        puts "#{value[:name]}::\r\n\t temp version -> #{version}\r\n\t register version -> #{value[:version]}\r\n"
+        puts("#{MSG[:INFO]}\n\r#{value.get(:info)}")
         # => check version
         if value[:version] == 0.0
           msg = sprintf(MSG[:DOWN_PLUGIN], value.get(:name), value.get(:author), version)
@@ -280,7 +265,7 @@ Dax.register(:plugin, "dax", 2.1) {
         @@root_path[[*key]] = path + filename
       end
       nfilename = filename.gsub(" ", "_")
-      Powershell.wget(link, "./" + nfilename, "-v")
+      Powershell.wget(link, "./" + nfilename, "-v") 
       Graphics.wait(30)
       File.rename("./" + nfilename, path + filename) rescue nil
     end
@@ -341,6 +326,7 @@ Dax.register(:plugin, "dax", 2.1) {
       content = $1
       @@hash[:version] = content.scan(REG["version"]).shift.shift.to_f rescue ""
       @@hash[:register] = content.scan(REG["register"]).shift.shift.to_s.split(/,/).collect! { |r|  r.to_s.lstrip.symbol } rescue ""
+      @@hash[:info] = content.scan(REG["info"]).shift.shift.to_s rescue ""
     end
     #--------------------------------------------------------------------------
     # • Checks all regexs
@@ -366,15 +352,12 @@ Dax.register(:plugin, "dax", 2.1) {
   #============================================================================
   # • Insira aqui: Os registros dos plugin.
   #============================================================================
-  Plugin.register({
-    name:             :hello_word,
-    author:           :dax,
-    version:          0.0,
-    link:             "http://pastebin.com/raw/N2kusL0N"
-  })
+  Plugin.register(:hello_world, :dax, 0.0, "http://pastebin.com/raw/N2kusL0N")
+  
   #============================================================================
   # • Run
   #============================================================================
-  Plugin.run()
+  hresult = API::MessageBox.call(Plugin::MSG[:TITLE], Plugin::MSG[:CONF], Plugin::MSG[:FORMAT])
+  Plugin.run() if hresult == API::MessageBox::YES
   Plugin.start()
 }
