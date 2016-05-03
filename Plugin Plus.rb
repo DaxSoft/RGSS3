@@ -34,34 +34,33 @@ Plugin.register(name, author, version, link)
 
 <plugin>
   <version>VERSÃO DO PLUGIN</version>
-  <register>REGISTRAR OS ARQUIVOS QUE SERÃO BAIXADO</register>
   <info>Informações da versão atual.</info>
 </plugin>
 
-<NOME DO REGISTRO DO ARQUIVO PASTA[POR PADRÃO É ROOTPATH]>
-  <folder>PASTA DENTRO DA PASTA PADRÃO, NÃO PRECISA DEFINIR, CASO NÃO TIVER</folder>
-  <link>URL DO ARQUIVO</link>
-  <output>TIPO DO ARQUIVO</output>
-  <filename>
-    NOME DO ARQUIVO, SE DEFINIR O TIPO DO ARQUIVO AQUI, 
-    NÃO PRECISA DEFINIR <output>; CASO NÃO DEFINIR <filename>, O NOME DO ARQUIVO
-    SERÁ O NOME DO REGISTRO, MAS AÍ É PRECISO DEFINIR O <output>
-  </filename>
-</NOME DO REGISTRO DO ARQUIVO>
 
-• Veja um exemplo.
-<!-- General setup -->
-<plugin>
-	<version>1.0</version>
-	<register>hello_word</register>
-</plugin>
+<tag HEADER>
+  <output>TIPO DE EXTENSÃO DO ARQUIVO PADRÃO</output>
+  {
+    NOME DO ARQUIVO <l> URL DO LINK <f> PASTA, OPICIONAL DEFINIR
+  }
+</tag>
 
-<!-- Plugin Download : Hello World -->
-<hello_word ROOTPATH>
-  <link>http://pastebin.com/raw/zXDtQV65</link>
-  <filename>Hello World.rb</filename>
-  <folder><folder>
-</hello_word>
+tipos de tags:
+  files : Todos os arquivos postos aqui, serão executados.
+  graphics 
+  audio 
+  movies 
+  system
+  project
+
+tipos do HEADER: PASTA PARA:
+  ROOTPATH : Data/Plugins/
+  GRAPHICS : Graphics/
+  AUDIO : Audio/
+  MOVIE : Movies/
+  SYSTEM : System/
+  PROJECT : /
+  CASO NÃO SEJA DEFINIDO : Data/Plugins/
 =end
 #==============================================================================
 # • Versões:
@@ -402,7 +401,7 @@ Dax.register(:plugin, "dax", 2.3, [[:powershell, "dax"]]) {
   # • Insira aqui: Os registros dos plugin.
   #============================================================================
   Plugin.register(:hello_world, :dax, 0.0, "http://pastebin.com/raw/N2kusL0N")
-  
+  Plugin.register(:steampunk_hud, :dax, 0.0, "http://pastebin.com/raw/mGjQMB95")
   #============================================================================
   # • Run
   #============================================================================
