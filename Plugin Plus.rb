@@ -2,7 +2,7 @@
 # • Plugin
 #==============================================================================
 # Autor: Dax
-# Versão: 2.2
+# Versão: 2.3
 # Site: www.dax-soft.weebly.com
 # Requerimento: Dax Core
 # tiagoms : Ajudou dando feedback.
@@ -73,8 +73,10 @@ Plugin.register(name, author, version, link)
 #    Novo método de baixar.
 # [2.2]
 #    Add da tag de informação.
+# [2.3]
+#    Novo método de registrar os arquivos do plugin.
 #==============================================================================
-Dax.register(:plugin, "dax", 2.2, [[:powershell, "dax"]]) {
+Dax.register(:plugin, "dax", 2.3, [[:powershell, "dax"]]) {
   $ROOT_PATH = ->(filename, dir="") { "#{Dir.pwd}/Data/Plugins/#{dir}#{filename}" }
   #============================================================================
   # • Plugin
@@ -89,11 +91,11 @@ Dax.register(:plugin, "dax", 2.2, [[:powershell, "dax"]]) {
     #--------------------------------------------------------------------------
     # • Constants
     #--------------------------------------------------------------------------
-    VERSION = "2.2"
+    VERSION = "2.3"
     TEMP = "./temp.txt"
     ERROR = true # mostrar erros.
     MSG = {
-      CONF: "Deseja verificar novas versões dos plugins?",
+      CONF: "Deseja verificar/baixar novas versões dos plugins?\nCaso seja a primeira vez executando, irá ocorrer um pequeno delay, só aguardar...",
       DOWN_PLUGIN: "Você deseja baixar o plugin: <%s>, do autor: <%s>, versão: <%03s>",
       NEW_UPDATE: "Uma nova atualização está disponível, do plugin: <%s>, do autor: <%s>, versão: <%03s>",
       NO_INTERNET: "Sem conexão com à internet",
@@ -101,6 +103,7 @@ Dax.register(:plugin, "dax", 2.2, [[:powershell, "dax"]]) {
       TITLE: "Plugin Manager #{VERSION}",
       clear: "Para o sistema de verificação de novas versão funcionar, você deve limpar o cache do seu navegador. Quer fazer isso agora? (Automático)"
     }
+    RKEY = [:files, :graphic, :system, :audio, :movie, :project]
     #--------------------------------------------------------------------------
     # • Variables
     #--------------------------------------------------------------------------
@@ -119,13 +122,7 @@ Dax.register(:plugin, "dax", 2.2, [[:powershell, "dax"]]) {
     #--------------------------------------------------------------------------
     def start()
       loadRegister() if FileTest.exist?("#{Dir.pwd}/Data/register.rvdata2")
-      @@root_path.each_value { |value|
-        if value.is_a?(String)
-          load_script(value.strip) rescue next
-        elsif value.is_a?(Array)
-          value.each { |path| load_script(path) rescue next } rescue next
-        end
-      }
+      @@root_path.each_value { |value| value.each { |i| load_script(i) rescue next } }
     end
     #--------------------------------------------------------------------------
     # • Register the plugins
@@ -193,7 +190,7 @@ Dax.register(:plugin, "dax", 2.2, [[:powershell, "dax"]]) {
         #Network.link_download(value.get(:link), TEMP)
         Powershell.wget(value.get(:link), TEMP)
         tempFile = File.open(TEMP, "rb") 
-        @@download[[*key]] = Plugin::Parse.read(tempFile.read)
+        @@download[[*key]] = Plugin::Parse.start(tempFile.read)
         version = @@download[[*key]][:version]
         information = @@download[[*key]][:info] 
         puts "#{value[:name]}::\r\n\t temp version -> #{version}\r\n\t register version -> #{value[:version]}\r\n"
@@ -210,12 +207,11 @@ Dax.register(:plugin, "dax", 2.2, [[:powershell, "dax"]]) {
         end
         # => download
         if hresult == MessageBox::YES
-          catch(:loop) {
-            @@download[[*key]][:register].each { |kregister|
-              download(@@download[[*key]][kregister], key)
-              @@register[[*key]][:version] = version
-            }
-            throw(:loop)
+          RKEY.each { |rkey|
+            next unless @@download[[*key]].has_key?(rkey)
+            Powershell.run("Clear-Host")
+            download(@@download[[*key]][rkey], key, rkey)
+            @@register[[*key]][:version] = version
           }
         end
         # => register new version and save
@@ -229,43 +225,44 @@ Dax.register(:plugin, "dax", 2.2, [[:powershell, "dax"]]) {
     # • headerFilter
     #--------------------------------------------------------------------------
     def headerFilter(header)
+      dot = "."
       if header == "ROOTPATH"
-        return "./Data/Plugins/"
+        return "#{dot}/Data/Plugins/"
       elsif header == "GRAPHICS"
-        return "./Graphics/"
+        return "#{dot}/Graphics/"
       elsif header == "AUDIO"
-        return "./Audio/"
+        return "#{dot}/Audio/"
       elsif header == "MOVIE"
-        return "./Movies/"
+        return "#{dot}/Movies/"
       elsif header == "SYSTEM"
-        return "./System/"
+        return "#{dot}/System/"
       elsif header == "PROJECT"
-        return "./"
+        return "#{dot}/"
       else
-        return "./Data/Plugins/"
+        return "#{dot}/Data/Plugins/"
       end
     end
     #--------------------------------------------------------------------------
     # • Download
     #--------------------------------------------------------------------------
-    def download(kd, key)
-      filename = kd[:filename]
-      header = kd[:header]
-      folder = kd[:folder]
-      link = kd[:link]
-      path = headerFilter(header)
-      path << folder
-      path << "/" unless path[path.size.pred] == "/"
-      Dir.mkdir(path) unless FileTest.directory?(path)
-      unless @@root_path[[*key]].is_a?(Array)
-        @@root_path[[*key]] << path + filename rescue @@root_path[[*key]] = path + filename
-      else
-        @@root_path[[*key]] = path + filename
-      end
-      nfilename = filename.gsub(" ", "_")
-      Powershell.wget(link, "./" + nfilename, "-v") 
+    def download(kd, key, rkey)
+      # => get hash
+      files = kd.get(:filename)
+      header = kd.get(:header)
+      links = kd.get(:link)
+      folder = kd.get(:folder)
+      # => files
+      files.each_with_index { |fname, n|
+        path = header + folder[n] rescue header
+        Dir.mkdir(path) unless FileTest.directory?(path)
+        fpath = path + fname 
+        nfname = "./" + fname.gsub(" ", "_")
+        Powershell.wget(links[n], nfname, "-v") 
+        Graphics.wait(30)
+        @@root_path[[*key]] << fpath if rkey == :files
+        File.rename(nfname, fpath) if FileTest.exist?(nfname)
+      }
       Graphics.wait(30)
-      File.rename("./" + nfilename, path + filename) rescue nil
     end
     #--------------------------------------------------------------------------
     # • saveRegister
@@ -306,14 +303,32 @@ Dax.register(:plugin, "dax", 2.2, [[:powershell, "dax"]]) {
     # • Constant
     #--------------------------------------------------------------------------
     REG = ->(tag) { return (/<#{tag}>(.*?)<\/#{tag}>/im) }
+    HEADER = ->(header) { 
+      if header == "ROOTPATH"
+        return "./Data/Plugins/"
+      elsif header == "GRAPHICS"
+        return "./Graphics/"
+      elsif header == "AUDIO"
+        return "./Audio/"
+      elsif header == "MOVIE"
+        return "./Movies/"
+      elsif header == "SYSTEM"
+        return "./System/"
+      elsif header == "PROJECT"
+        return "./"
+      else
+        return "./Data/Plugins/"
+      end
+    }
     #--------------------------------------------------------------------------
     # • read
     # => output is as Hash.
     #--------------------------------------------------------------------------
-    def read(str, gA=true)
+    def start(str, gA=true)
+      str.gsub!(/<!--(.*?)-->/im, "")
       @@hash = {}
       general(str)
-      getAll(str) if gA
+      ["files","graphic","system","audio","movie","project"].each { |tags| tag(str, tags) }
       @@hash
     end
     #--------------------------------------------------------------------------
@@ -323,35 +338,60 @@ Dax.register(:plugin, "dax", 2.2, [[:powershell, "dax"]]) {
       str.match(/<plugin>(.*?)<\/plugin>/im)
       content = $1
       @@hash[:version] = content.scan(REG["version"]).shift.shift.to_f rescue ""
-      @@hash[:register] = content.scan(REG["register"]).shift.shift.to_s.split(/,/).collect! { |r|  r.to_s.lstrip.symbol } rescue ""
-      @@hash[:info] = str.scan(REG["info"]).shift.shift.to_s rescue ""
+      @@hash[:info] = content.scan(REG["info"]).shift.shift.to_s rescue ""
     end
     #--------------------------------------------------------------------------
-    # • Checks all regexs
+    # • Checks the files setup
     #--------------------------------------------------------------------------
-    def getAll(str)
-      @@hash[:register].each { |key|
-        next unless key.is_a?(Symbol)
-        @@hash[key] = {}
-        hash = {}
-        str.match(/<#{key}(.*?)>(.*?)<\/#{key}>/im)
-        header = $1.to_s
-        content = $2
-        hash[:header] = header.lstrip
-        hash[:output] = content.scan(REG["output"]).shift.shift.to_s rescue ""
-        hash[:filename] = content.scan(REG["filename"]).shift.shift.to_s rescue "#{key}"
-        hash[:filename] = hash[:filename].include?(".") ? hash[:filename] : "#{hash[:filename]}.#{hash[:output]}" rescue "#{key}.#{hash[:output]}"
-        hash[:folder] = content.scan(REG["folder"]).shift.shift.to_s rescue ""
-        hash[:link] = content.scan(REG["link"]).shift.shift.to_s rescue ""
-        @@hash[key].merge!(hash)
+    def tag(str, tag)
+      return unless str.include?(tag)
+      @@hash[tag.symbol] = {}
+      hash = {}
+      str.match(/<#{tag} (.*?)>(.*?)<\/#{tag}>/im)
+      hash[:header] = HEADER[$1] rescue "./Data/Plugins/"
+      content = $2
+      hash[:output] = content.scan(REG["output"]).shift.shift.to_s rescue "rb"
+      hash[:filename] = []
+      hash[:link] = []
+      hash[:folder] = []
+      content.match(/\{(.*?)\}/im) rescue return
+      list = $1.split(/\n/).if{|i|!i.empty?}.collect!(&:lstrip)
+      list.each { |l|
+        if l.include?("<f>")
+          l.match(/(.*?)<l>(.*?)<f>(.*)/im)
+          fname = $1.strip rescue ""
+          next if fname.nil? or fname.empty?
+          unless fname.include?(".")
+            fname << ".#{hash[:output]}"
+          end
+          hash[:filename] << fname
+          link = $2.strip rescue ""
+          next if link.nil? or link.empty?
+          hash[:link] << link
+          folder = $3.strip rescue ""
+          next if folder.nil? or folder.empty?
+          hash[:folder] << folder + "/"
+        else
+          l.match(/(.*?)<l>(.*)/im)
+          fname = $1.strip rescue ""
+          next if fname.nil? or fname.empty?
+          unless fname.include?(".")
+            fname << ".#{hash[:output]}"
+          end
+          hash[:filename] << fname
+          link = $2.strip rescue ""
+          next if link.nil? or link.empty?
+          hash[:link] << link
+        end
       }
+      @@hash[tag.symbol].merge!(hash)
     end
   end
   #============================================================================
   # • Insira aqui: Os registros dos plugin.
   #============================================================================
   Plugin.register(:hello_world, :dax, 0.0, "http://pastebin.com/raw/N2kusL0N")
-  
+  Plugin.register(:steampunk_hud, :dax, 0.0, "http://pastebin.com/raw/mGjQMB95")
   #============================================================================
   # • Run
   #============================================================================
