@@ -94,7 +94,7 @@ Dax.register(:plugin, "dax", 2.5, [[:powershell, "dax"]]) {
     #--------------------------------------------------------------------------
     # • Constants
     #--------------------------------------------------------------------------
-    KEY = :F4
+    KEY = :F8
     VERSION = "2.5"
     TEMP = "./temp.txt"
     ERROR = true # mostrar erros.
@@ -586,8 +586,8 @@ Dax.register(:plugin, "dax", 2.5, [[:powershell, "dax"]]) {
     #--------------------------------------------------------------------------
     alias :pluginManagerScene_update :update
     def update(*args, &block)
+      SceneManager.call(Scene_PluginManager) if trigger?(Plugin::KEY)
       pluginManagerScene_update(*args, &block)
-      trigger?(Plugin::KEY) { SceneManager.call(Scene_PluginManager) }
     end
   end
   #============================================================================
