@@ -501,6 +501,9 @@ Dax.register(:plugin, "dax", 2.5, [[:powershell, "dax"]]) {
       @cwindow = Window_PluginManagerConfirm.new
       @cwindow.set_handler(:delete, method(:deletePlugin))
       @cwindow.set_handler(:back, method(:back))
+      @cwindow.active = false
+      @cwindow.visible = false
+      Graphics.wait(60)
     end
     #--------------------------------------------------------------------------
     # • Criar window
