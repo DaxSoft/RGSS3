@@ -2,7 +2,7 @@
 # • Plugin
 #==============================================================================
 # Autor: Dax
-# Versão: 2.5
+# Versão: 2.6
 # Site: www.dax-soft.weebly.com
 # Requerimento: Dax Core
 # tiagoms : Ajudou dando feedback.
@@ -34,7 +34,9 @@ Plugin.register(name, author, version, link)
 
 <plugin>
   <version>VERSÃO DO PLUGIN</version>
+  <size>INFORMAR TAMANHO DO ARQUIVO NUM TODO, OPCIONAL</size>
   <info>Informações da versão atual.</info>
+  <thumb>LINK</thumb>
 </plugin>
 
 
@@ -77,8 +79,11 @@ tipos do HEADER: PASTA PARA:
 # [2.5]
 #    Correção de pequenos bugs.
 #    Funçao de deletar plugins.
+# [2.6]
+#    Adiciona a opção de informar o tamanho total.
+#    Adiciona a opção de por um thumb do plugin, para o PluginManager.
 #==============================================================================
-Dax.register(:plugin, "dax", 2.5, [[:powershell, "dax"]]) {
+Dax.register(:plugin, "dax", 2.6, [[:powershell, "dax"]]) {
   Dir.mkdir("#{Dir.pwd}/Data/Plugins") unless FileTest.directory?("#{Dir.pwd}/Data/Plugins")
   $ROOT_PATH = ->(filename, dir="") { "#{Dir.pwd}/Data/Plugins/#{dir}#{filename}" }
   #============================================================================
@@ -94,14 +99,14 @@ Dax.register(:plugin, "dax", 2.5, [[:powershell, "dax"]]) {
     #--------------------------------------------------------------------------
     # • Constants
     #--------------------------------------------------------------------------
+    BEGIN_WITH_SCENEMANAGER = true
     KEY = :F8
-    VERSION = "2.5"
+    VERSION = "2.6"
     TEMP = "./temp.txt"
-    ERROR = true # mostrar erros.
     MSG = {
       CONF: "Deseja verificar/baixar novas versões dos plugins?\nCaso seja a primeira vez executando, irá ocorrer um pequeno delay, só aguardar...\nPressione #{KEY} para acessar ao menu.",
-      DOWN_PLUGIN: "Você deseja baixar o plugin: <%s>\nDo autor: <%s>\nversão: <%03s>\n",
-      NEW_UPDATE: "Uma nova atualização está disponível, do plugin: <%s>\ndo autor: <%s>\nversão: <%03s>\n",
+      DOWN_PLUGIN: "Você deseja baixar o plugin: <%s>\nDo autor: <%s>\nversão: <%03s>\ntamanho: <%02s>\n",
+      NEW_UPDATE: "Uma nova atualização está disponível, do plugin: <%s>\ndo autor: <%s>\nversão: <%03s>\ntamanho: <%02s>\n",
       NO_INTERNET: "Sem conexão com à internet",
       FORMAT: MessageBox::ICONINFORMATION|MessageBox::YESNO,
       TITLE: "Plugin Manager #{VERSION}",
@@ -220,17 +225,18 @@ Dax.register(:plugin, "dax", 2.5, [[:powershell, "dax"]]) {
         Powershell.wget(value.get(:link), TEMP)
         tempFile = File.open(TEMP, "rb") 
         @@download[[*key]] = Plugin::Parse.start(tempFile.read)
+        _size = @@download[[*key]][:size]
         version = @@download[[*key]][:version]
         information = @@download[[*key]][:info] 
         puts "#{value[:name]}::\r\n\t temp version -> #{version}\r\n\t register version -> #{value[:version]}\r\n"
         MessageBox.call("#{value[:name]} #{version}", information, 0)
         # => check version
         if value[:version] == 0.0
-          msg = sprintf(MSG[:DOWN_PLUGIN], value.get(:name), value.get(:author), version)
+          msg = sprintf(MSG[:DOWN_PLUGIN], value.get(:name), value.get(:author), version, _size)
           hresult = MessageBox.call(MSG[:TITLE], msg, MSG[:FORMAT])
         elsif version > value.get(:version)
           @@register[[*key]][:path] = []
-          msg = sprintf(MSG[:NEW_UPDATE], value.get(:name), value.get(:author), version)
+          msg = sprintf(MSG[:NEW_UPDATE], value.get(:name), value.get(:author), version, _size)
           hresult = MessageBox.call(MSG[:TITLE], msg, MSG[:FORMAT])
         end
         # => download
@@ -370,8 +376,10 @@ Dax.register(:plugin, "dax", 2.5, [[:powershell, "dax"]]) {
     def general(str)
       str.match(/<plugin>(.*?)<\/plugin>/im)
       content = $1
-      @@hash[:version] = content.scan(REG["version"]).shift.shift.to_f rescue ""
+      @@hash[:version] = content.scan(REG["version"]).shift.shift.to_f rescue 0.0
       @@hash[:info] = content.scan(REG["info"]).shift.shift.to_s rescue ""
+      @@hash[:size] = content.scan(REG["size"]).shift.shift.to_s rescue "--"
+      @@hash[:thumb] = content.scan(REG["thumb"]).shift.shift.to_s rescue ""
     end
     #--------------------------------------------------------------------------
     # • Checks the files setup
@@ -500,7 +508,7 @@ Dax.register(:plugin, "dax", 2.5, [[:powershell, "dax"]]) {
       create_window
       @cwindow = Window_PluginManagerConfirm.new
       @cwindow.set_handler(:delete, method(:deletePlugin))
-      @cwindow.set_handler(:back, method(:back))
+      @cwindow.set_handler(:back, method(:backing))
       @cwindow.active = false
       @cwindow.visible = false
       Graphics.wait(60)
@@ -520,6 +528,20 @@ Dax.register(:plugin, "dax", 2.5, [[:powershell, "dax"]]) {
         @index << key
       }
       Font.default_size = oldSize
+    end
+    #--------------------------------------------------------------------------
+    # • Back
+    #--------------------------------------------------------------------------
+    def backing
+      if Plugin::BEGIN_WITH_SCENEMANAGER
+        if SceneManager.stack.empty? or SceneManager.stack.first.is_a?(Scene_PluginManager)
+          SceneManager.goto(SceneManager.first_scene_class)
+        else
+          return_scene
+        end
+      else
+        return_scene
+      end
     end
     #--------------------------------------------------------------------------
     # • Open
@@ -581,7 +603,7 @@ Dax.register(:plugin, "dax", 2.5, [[:powershell, "dax"]]) {
     end
   end
   #============================================================================
-  # • Scene_Base
+  # • Scene_Base 
   #============================================================================
   class Scene_Base
     #--------------------------------------------------------------------------
@@ -589,14 +611,41 @@ Dax.register(:plugin, "dax", 2.5, [[:powershell, "dax"]]) {
     #--------------------------------------------------------------------------
     alias :pluginManagerScene_update :update
     def update(*args, &block)
-      SceneManager.call(Scene_PluginManager) if trigger?(Plugin::KEY)
+      if trigger?(Plugin::KEY)
+        SceneManager.call(Scene_PluginManager) unless SceneManager.is_a?(Scene_PluginManager)
+      end
       pluginManagerScene_update(*args, &block)
+    end
+  end
+  #============================================================================
+  # • SceneManager
+  #============================================================================
+  class << SceneManager
+    attr_accessor :stack
+    #--------------------------------------------------------------------------
+    # * Execução
+    #--------------------------------------------------------------------------
+    def run
+      DataManager.init
+      Audio.setup_midi if use_midi?
+      unless Plugin::BEGIN_WITH_SCENEMANAGER
+        @scene = first_scene_class.new
+      else
+        @scene = Scene_PluginManager.new
+      end
+      @scene.main while @scene
+    end
+    #--------------------------------------------------------------------------
+    # * Cena da primeira classe
+    #--------------------------------------------------------------------------
+    def first_scene_class
+      $BTEST ? Scene_Battle : Scene_Title
     end
   end
   #============================================================================
   # • Insira aqui: Os registros dos plugin.
   #============================================================================
-  
+  Plugin.register(:steampunk_hud, :dax, 0.0, "http://pastebin.com/raw/mGjQMB95")
   #============================================================================
   # • Run
   #============================================================================
