@@ -134,7 +134,7 @@ Dax.register(:ultimate_sensor_event, "Dax", 5.1) {
       vol = (dist) * Math.sqrt( (  (d-dist)/(100)  ).abs )
       vol = 100 - DMath.clamp(vol, 1, 100)
       vol = DMath.to_4_dec(vol) * p
-      if time.nil?
+      if time.nil? or time <= 0 
         SoundBase.play(a, vol, 100, c)
       else
         @timeUlseSound.tM(time, eve.id)
@@ -153,6 +153,7 @@ Dax.register(:ultimate_sensor_event, "Dax", 5.1) {
     # • Sensor por área.
     #--------------------------------------------------------------------------
     def sarea?(a=1, b=nil, c=nil)
+      b = nil if b == 0
       a = @_nozero[a]
       distance = DMath.distance_sensor($game_player, $game_map.events[b.nil? ? @event_id : Integer(b)])
       $game_switches[c] = (distance <= a) unless c.nil?
@@ -162,6 +163,7 @@ Dax.register(:ultimate_sensor_event, "Dax", 5.1) {
     # • Sensor na frente do evento.
     #--------------------------------------------------------------------------
     def sfront?(a=1, b=nil, c=nil)
+      b = nil if b == 0
       a = @_nozero[a]
       block_sensor(b) { |ex, ey, px, py|
         return unless px == ex
@@ -178,6 +180,7 @@ Dax.register(:ultimate_sensor_event, "Dax", 5.1) {
     # • Sensor atrás do evento.
     #--------------------------------------------------------------------------
     def sago?(a=1, b=nil, c=nil)
+      b = nil if b == 0
       a = @_nozero[a]
       block_sensor(b) { |ex, ey, px, py|
         return unless px == ex
@@ -195,6 +198,7 @@ Dax.register(:ultimate_sensor_event, "Dax", 5.1) {
     # • Sensor quando estiver sobre o evento.
     #--------------------------------------------------------------------------
     def sabout?(b=nil, c=nil)
+      b = nil if b == 0
       block_sensor(b) { |ex, ey, px, py|
         if px == ex && py == ey
           $game_switches[c] = true unless c.nil?
@@ -208,6 +212,7 @@ Dax.register(:ultimate_sensor_event, "Dax", 5.1) {
     # • Sensor quando estiver a direita do evento.
     #--------------------------------------------------------------------------
     def sright?(a=1, b=nil, c=nil)
+      b = nil if b == 0
       a = @_nozero[a]
       block_sensor(b) {|ex, ey, px, py|
         return unless py == ey
@@ -224,6 +229,7 @@ Dax.register(:ultimate_sensor_event, "Dax", 5.1) {
     # • Sensor quando estiver a esquerda do evento.
     #--------------------------------------------------------------------------
     def sleft?(a=1, b=nil, c=nil)
+      b = nil if b == 0
       a = @_nozero[a]
       block_sensor(b) {|ex, ey, px, py|
         return unless py == ey
@@ -240,12 +246,14 @@ Dax.register(:ultimate_sensor_event, "Dax", 5.1) {
     # • Sensor em forma de cruz.
     #--------------------------------------------------------------------------
     def scross?(a=1, b=nil, c=nil)
+      b = nil if b == 0
       sfront?(a, b, c) || sago?(a, b, c) || sright?(a, b, c) || sleft?(a, b, c)
     end
     #--------------------------------------------------------------------------
     # • Sensor que verifica somente a visão do evento.
     #--------------------------------------------------------------------------
     def svision?(a=1, b=nil, c=nil)
+      b = nil if b == 0
       case $game_map.events[b.nil? ? @event_id : Integer(b)].direction
       when 2 then sfront?(a, b, c)
       when 4 then sleft?(a, b, c)
@@ -257,6 +265,7 @@ Dax.register(:ultimate_sensor_event, "Dax", 5.1) {
     # • Sensor que verifica se está somente atrás do evento.
     #--------------------------------------------------------------------------
     def sbehind?(a=1, b=nil, c=nil)
+      b = nil if b == 0
       case $game_map.events[b.nil? ? @event_id : Integer(b)].direction
       when 2 then sago?(a, b, c)
       when 4 then sright?(a, b, c)
@@ -268,6 +277,7 @@ Dax.register(:ultimate_sensor_event, "Dax", 5.1) {
     # • Sensor que verifica se está somente a esquerda do evento.
     #--------------------------------------------------------------------------
     def vleft?(a=1, b=nil, c=nil)
+      b = nil if b == 0
       case $game_map.events[b.nil? ? @event_id : Integer(b)].direction
       when 2 then sright?(a, b, c)
       when 4 then sfront?(a, b, c)
@@ -279,6 +289,7 @@ Dax.register(:ultimate_sensor_event, "Dax", 5.1) {
     # • Sensor que verifica se está somente a direita do evento.
     #--------------------------------------------------------------------------
     def vright?(a=1, b=nil, c=nil)
+      b = nil if b == 0
       case $game_map.events[b.nil? ? @event_id : Integer(b)].direction
       when 2 then sleft?(a, b, c)
       when 4 then sfront?(a, b, c)
@@ -290,6 +301,7 @@ Dax.register(:ultimate_sensor_event, "Dax", 5.1) {
     # • Sensor que verifica o lado esquerdo-superior na diagonal.
     #--------------------------------------------------------------------------
     def dsleft?(a=1, b=nil, c=nil)
+      b = nil if b == 0
       a = @_nozero[a]
       block_sensor(b) {|ex, ey, px, py|
         0.upto(a) { |i|
@@ -306,6 +318,7 @@ Dax.register(:ultimate_sensor_event, "Dax", 5.1) {
     # • Sensor que verifica o lado direito-superior na diagonal.
     #--------------------------------------------------------------------------
     def dsright?(a=1, b=nil, c=nil)
+      b = nil if b == 0
       a = @_nozero[a]
       block_sensor(b) {|ex, ey, px, py|
         0.upto(a) { |i|
@@ -322,6 +335,7 @@ Dax.register(:ultimate_sensor_event, "Dax", 5.1) {
     # • Sensor que verifica o lado esquerdo-inferior na diagonal.
     #--------------------------------------------------------------------------
     def dileft?(a=1, b=nil, c=nil)
+      b = nil if b == 0
       a = @_nozero[a]
       block_sensor(b) {|ex, ey, px, py|
         0.upto(a) { |i|
@@ -338,6 +352,7 @@ Dax.register(:ultimate_sensor_event, "Dax", 5.1) {
     # • Sensor que verifica o lado direito-inferior na diagonal.
     #--------------------------------------------------------------------------
     def diright?(a=1, b=nil, c=nil)
+      b = nil if b == 0
       a = @_nozero[a]
       block_sensor(b) {|ex, ey, px, py|
         0.upto(a) { |i|
@@ -360,6 +375,7 @@ Dax.register(:ultimate_sensor_event, "Dax", 5.1) {
     # • Sensor que verifica a diagonal de acordo com a visão do evento.
     #--------------------------------------------------------------------------
     def vdiagonal?(a=1, b=nil, c=nil)
+      b = nil if b == 0
       case $game_map.events[b.nil? ? @event_id : Integer(b)].direction
       when 2 then dileft?(a, b, c) || diright?(a, b, c)
       when 4 then dsleft?(a, b, c) || dileft?(a, b, c)
@@ -370,7 +386,8 @@ Dax.register(:ultimate_sensor_event, "Dax", 5.1) {
     #--------------------------------------------------------------------------
     # • Sensor que verifica em forma de círculo.
     #--------------------------------------------------------------------------
-    def scircle?(a=2, b=nil)
+    def scircle?(a=2, b=nil, c=nil)
+      b = nil if b == 0
       a = a < 2 ? 2 : a
       diagonal?(a-1, b, c) || scross?(a, b, c)
     end
@@ -378,6 +395,7 @@ Dax.register(:ultimate_sensor_event, "Dax", 5.1) {
     # • Sensor que verifica em retângulo/quadrado na visão do npc.
     #--------------------------------------------------------------------------
     def scubic?(a=3, b=nil, c=nil)
+      b = nil if b == 0
       a = @_nozero[a]
       case $game_map.events[b.nil? ? @event_id : Integer(b)].direction
       when 2 #back
