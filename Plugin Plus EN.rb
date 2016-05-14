@@ -116,7 +116,7 @@ Dax.register(:plugin, "dax", 2.6, [[:powershell, "dax"]]) {
     # • Constants
     #--------------------------------------------------------------------------
     # Begin with the menu
-    BEGIN_WITH_SCENEMANAGER = true
+    BEGIN_WITH_SCENEMANAGER = false
     KEY = :F8
     VERSION = "2.6"
     TEMP = "./temp.txt"
