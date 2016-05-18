@@ -11,5 +11,5 @@ Gem::Specification.new do |s|
 	files = []
 	files += Dir.glob('./**/*')
 	s.files = files
-	s.homepage = ""
+	s.homepage = "https://github.com/DaxSoft/RGSS3/tree/master/steampunk_hud_dax"
 end
