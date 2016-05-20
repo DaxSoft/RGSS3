@@ -2,7 +2,7 @@
 # • Plugin
 #==============================================================================
 # Author: Dax
-# Version: 2.6
+# Version: 2.7
 # Site: www.dax-soft.weebly.com
 # Requeriment: Dax Core
 # tiagoms : Feedback that helped improve more on the project
@@ -18,7 +18,7 @@
 # do and a example.
 =begin
 ** To register a plugin is very easy.
-Plugin.register(name, author, version, link)
+Plugin.register(name, author, version, link, requires)
         You must to set the name of register of the plugin.
         name:             :name_of, # Like this.
         You must to set the author of the plugin.
@@ -28,6 +28,13 @@ Plugin.register(name, author, version, link)
         version:          0.0,
         You must to set the link of the plugin.
         link:             "url"
+        You must define the requirements for the registration work. It's optional.
+        Isn't necessary. Case you set the requirements, it's necessary that the 
+        same be installed in your project to be installed.
+        requires: [ [:name, "author"], ... ]
+** Like:
+  Plugin.register(:test, "dax", 0.0, "link")
+  Plugin.register(:hello, "dax", 0.0, "link", [[:test, "dax"]])
         
 Now, on the link which you set, it must contain the follow:       
 
@@ -98,8 +105,10 @@ Plugin.register(:hello_world, "dax", 0.0, http://pastebin.com/raw/N2kusL0N)
 #    Function of del the plugins.
 # [2.6]
 #    Tag of the info the total size.
+# [2.7]
+#    Optional requirements to install a plugin register.
 #==============================================================================
-Dax.register(:plugin, "dax", 2.6, [[:powershell, "dax"]]) {
+Dax.register(:plugin, "dax", 2.7, [[:powershell, "dax"]]) {
   Dir.mkdir("#{Dir.pwd}/Data/Plugins") unless FileTest.directory?("#{Dir.pwd}/Data/Plugins")
   $ROOT_PATH = ->(filename, dir="") { "#{Dir.pwd}/Data/Plugins/#{dir}#{filename}" }
   #============================================================================
@@ -118,7 +127,7 @@ Dax.register(:plugin, "dax", 2.6, [[:powershell, "dax"]]) {
     # Begin with the menu
     BEGIN_WITH_SCENEMANAGER = false
     KEY = :F8
-    VERSION = "2.6"
+    VERSION = "2.7"
     TEMP = "./temp.txt"
     MSG = {
       CONF: "Do you wish check/download new versions of the plugins?\nIf be the first time running, will happens a little delay, just wait...\nPress #{KEY} to access the menu.",
@@ -134,17 +143,17 @@ Dax.register(:plugin, "dax", 2.6, [[:powershell, "dax"]]) {
       RF: "Exit from the project to update the register.\nDo you wish make this now?",
     }
     RKEY = [:files, :graphic, :system, :audio, :movie, :project]
+    PLUGIN_REGISTER_FILE = "#{Dir.pwd}/Data/PluginRegister.rvdata2"
     #--------------------------------------------------------------------------
     # • Variables
     #--------------------------------------------------------------------------
     @@register = {}
     @@download = {}
-    @@root_path = {}
     #--------------------------------------------------------------------------
     # • Run plugin
     #--------------------------------------------------------------------------
     def run()
-      File.delete(TEMP) if FileTest.exist?(TEMP)
+      (File.delete(TEMP) if FileTest.exist?(TEMP)) rescue nil
       check()
       ps("exit")
     end
@@ -152,7 +161,7 @@ Dax.register(:plugin, "dax", 2.6, [[:powershell, "dax"]]) {
     # • Load all plugin files
     #--------------------------------------------------------------------------
     def start()
-      loadRegister() if FileTest.exist?("#{Dir.pwd}/Data/register.rvdata2")
+      loadRegister() if FileTest.exist?(PLUGIN_REGISTER_FILE)
       @@register.each_value { |value|
         value[:path].each { |i|
           load_script(i) rescue next
@@ -182,7 +191,6 @@ Dax.register(:plugin, "dax", 2.6, [[:powershell, "dax"]]) {
       @@download[[hash[:name], hash[:author]]] = []
       @@register[[hash[:name], hash[:author]]][:path] = []
       @@register[[hash[:name], hash[:author]]][:_path] = []
-      @@root_path[[hash[:name], hash[:author]]] = []
     end
     #--------------------------------------------------------------------------
     # • Check the registers plugin
@@ -233,7 +241,7 @@ Dax.register(:plugin, "dax", 2.6, [[:powershell, "dax"]]) {
       # => check the internet, state of the project, load register
       return unless $TEST
       return msgbox(MSG[:NO_INTERNET]) unless Network.connected?
-      loadRegister if FileTest.exist?("#{Dir.pwd}/Data/register.rvdata2")
+      loadRegister 
       # => register infos
       @@register.each_pair { |key, value|
         # => generator temp file
@@ -325,7 +333,7 @@ Dax.register(:plugin, "dax", 2.6, [[:powershell, "dax"]]) {
     # • saveRegister
     #--------------------------------------------------------------------------
     def saveRegister()
-      File.open("#{Dir.pwd}/Data/register.rvdata2", "wb") { |file|
+      File.open(PLUGIN_REGISTER_FILE, "wb") { |file|
         export = ->() {
           content = {}
           content[:register] = @@register
@@ -338,10 +346,10 @@ Dax.register(:plugin, "dax", 2.6, [[:powershell, "dax"]]) {
     # • loadRegister
     #--------------------------------------------------------------------------
     def loadRegister()
-      File.open("#{Dir.pwd}/Data/register.rvdata2", "rb") { |file|
+      return unless FileTest.exist?(PLUGIN_REGISTER_FILE)
+      File.open(PLUGIN_REGISTER_FILE, "rb") { |file|
         import = ->(content) {
           @@register.merge!(content[:register]) rescue {}
-          @@root_path.merge!(content[:root_path]) rescue {}
         }
         import[Marshal.load(file)]
       }
@@ -662,7 +670,8 @@ Dax.register(:plugin, "dax", 2.6, [[:powershell, "dax"]]) {
   #============================================================================
   # • Insert here: The registers of the plugins.
   #============================================================================
-  Plugin.register(:steampunk_hud, :dax, 0.0, "http://pastebin.com/raw/mGjQMB95")
+  
+  
   #============================================================================
   # • Run
   #============================================================================
