@@ -178,19 +178,25 @@ Dax.register(:plugin, "dax", 2.7, [[:powershell, "dax"]]) {
     #       link: ""
     #    }
     #--------------------------------------------------------------------------
-    def register(name, author, version, link)
-      hash = { 
-        name: name,
-        author: author, 
-        version: version,
-        link: link
-      }
-      registerError(hash)
-      return if registred?(hash[:name], hash[:author], hash[:version])
-      @@register[[hash[:name], hash[:author]]] = hash
-      @@download[[hash[:name], hash[:author]]] = []
-      @@register[[hash[:name], hash[:author]]][:path] = []
-      @@register[[hash[:name], hash[:author]]][:_path] = []
+    def register(name, author, version, link, requires=[])
+      need = []
+      requires.each { |needed| need << needed unless registred?(*needed) }
+      if need.empty?
+        hash = { 
+          name: name,
+          author: author, 
+          version: version,
+          link: link
+        }
+        registerError(hash)
+        return if registred?(hash[:name], hash[:author], hash[:version])
+        @@register[[hash[:name], hash[:author]]] = hash
+        @@download[[hash[:name], hash[:author]]] = []
+        @@register[[hash[:name], hash[:author]]][:path] = []
+        @@register[[hash[:name], hash[:author]]][:_path] = []
+      else
+      end
+      return nil
     end
     #--------------------------------------------------------------------------
     # • Check the registers plugin
