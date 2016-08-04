@@ -2,7 +2,7 @@
 # • Plugin
 #==============================================================================
 # Author: Dax
-# Version: 3.0
+# Version: 3.1
 # Site: www.dax-soft.weebly.com
 # Requeriment: Dax Core
 # tiagoms : Feedback that helped improve more on the project
@@ -34,11 +34,12 @@
 #    Optional requirements to install a plugin register.
 # [3.0]
 #    New parser to register plugin's file
-#    Progress bar to download.
 #    New PluginManager
 #    New tag command to parser.
+# [3.1]
+#    New PluginManaer, better.
 #==============================================================================
-Dax.register(:plugin, "dax", 3.0, [[:powershell, "dax"]]) {
+Dax.register(:plugin, "dax", 3.1, [[:powershell, "dax"]]) {
   #============================================================================
   # • Default Folders and Global Variable $ROOT_PATH
   #============================================================================
@@ -63,7 +64,7 @@ Dax.register(:plugin, "dax", 3.0, [[:powershell, "dax"]]) {
     # Key to active the menu
     KEY = :F8
     # Version of the Plugin
-    VERSION = "3.0"
+    VERSION = "3.1"
     # Temp file
     TEMP = "./temp.tmp"
     # Setup of the all message.
@@ -76,14 +77,18 @@ Dax.register(:plugin, "dax", 3.0, [[:powershell, "dax"]]) {
       TITLE: "Plugin Manager #{VERSION}",
       PLMS: "Plugin Manager #{VERSION} [ installed: %02d ]",
       BACK: "Go back",
-      CL: "%s: from: [%s] version: [%.2f] [%s]",
+      CL: "%s [%.2f] [%s]",
       DELETE: "Delete",
       RF: "Exit from the project to update the register.\nDo you wish make this now?",
       REQUIRE: "The plugin %s from the author %s.\nRequires the plugin %s from the author %s to work.",
       DPBD: "While the download works, it's necessary that you keep the project open and stay in him.",
       SURE: "Are you sure that you want to download this file? %s",
       ABOUT: "About",
-      WEBSITE: "Go to website",
+      WEBSITE: "Website",
+      RESET: "Reset",
+      WEBGO: "Are you sure that you want go to the website?",
+      DELGO: "Are you sure that you want delete this plugin?",
+      RESGO: "Are you sure that you want reset all this plugin?",
     }
     # Setup of the all tag
     RDIR = {
@@ -97,6 +102,69 @@ Dax.register(:plugin, "dax", 3.0, [[:powershell, "dax"]]) {
     }
     # Register file
     PLUGIN_REGISTER_FILE = "#{Dir.pwd}/Data/Plugin.rvdata2"
+    #----------------------------------------------------------------------------
+    # • Configuração das fontes usadas.
+    #----------------------------------------------------------------------------
+    FONT = {
+      # Fonte usada nos menus.
+      base: {
+        NAME: "Trebuchet MS", 
+        SIZE: 16,
+        BOLD: false,
+        ITALIC: false,
+        OUTLINE: false,
+        COLOR: "FFFFFF",
+        OUTCOLOR: "000000",
+        SHADOW: false
+      },
+      # small
+      small: {
+        NAME: "Trebuchet MS", 
+        SIZE: 16,
+        BOLD: false,
+        ITALIC: false,
+        OUTLINE: false,
+        COLOR: "FFFFFF",
+        OUTCOLOR: "000000",
+        SHADOW: false
+      },
+      # title
+      title: {
+        NAME: "Trebuchet MS", 
+        SIZE: 18,
+        BOLD: false,
+        ITALIC: false,
+        OUTLINE: false,
+        COLOR: "FFFFFF",
+        OUTCOLOR: "000000",
+        SHADOW: false
+      },
+    }
+    # Font proc
+    FONT_PROC = ->(bitmap, sym=:base) {
+      bitmap.font.name = FONT[sym][:NAME] || "Trebuchet MS"
+      bitmap.font.size = FONT[sym][:SIZE] || 14
+      bitmap.font.bold = FONT[sym][:BOLD] || false
+      bitmap.font.italic = FONT[sym][:ITALIC] || false
+      bitmap.font.shadow = FONT[sym][:SHADOW] || false
+      bitmap.font.outline = FONT[sym][:OUTLINE] || false
+      bitmap.font.out_color = FONT[sym][:OUTCOLOR].color || Color.new.hex("000000")
+      bitmap.font.color = FONT[sym][:COLOR].color || Color.new.default
+    }
+    #--------------------------------------------------------------------------
+    # • Back
+    #--------------------------------------------------------------------------
+    def backing
+      if Plugin::BEGIN_WITH_SCENEMANAGER
+        if SceneManager.stack.empty? or SceneManager.stack.first.is_a?(Scene_PluginManager)
+          SceneManager.goto(SceneManager.first_scene_class)
+        else
+          SceneManager.return
+        end
+      else
+        SceneManager.return
+      end
+    end
     #--------------------------------------------------------------------------
     # • Variables
     #--------------------------------------------------------------------------
@@ -123,6 +191,46 @@ Dax.register(:plugin, "dax", 3.0, [[:powershell, "dax"]]) {
           load_script(i) rescue next
         } rescue next
       }
+    end
+    #--------------------------------------------------------------------------
+    # • Delete
+    #--------------------------------------------------------------------------
+    def delete(key, author, ask=true)
+      return unless registred?(key, author)
+      registerInfo(key, author)[:path].each { |file|
+        puts "Deleting file... #{file}"
+        File.delete(file) if FileTest.exist?(file)
+        puts "File deleted!"
+      } rescue nil
+      registerInfo(key, author)[:_path].each { |file|
+        puts "Deleting file... #{file}"
+        File.delete(file) if FileTest.exist?(file)
+        puts "File deleted!"
+      } rescue nil
+      Plugin.data.delete([key, author])
+      Plugin.saveRegister()
+      if ask
+        hresult = API::MessageBox.call(Plugin::MSG[:TITLE], Plugin::MSG[:RF], Plugin::MSG[:FORMAT])
+        if hresult == API::MessageBox::YES
+          SceneManager.exit 
+        else
+          return
+        end
+      end
+    end
+    #--------------------------------------------------------------------------
+    # • Reset
+    #--------------------------------------------------------------------------
+    def reset
+      Plugin.data.each_pair { |key, value|
+        delete(key[0], key[1], false)
+      }
+      hresult = API::MessageBox.call(Plugin::MSG[:TITLE], Plugin::MSG[:RF], Plugin::MSG[:FORMAT])
+      if hresult == API::MessageBox::YES
+        SceneManager.exit 
+      else
+        return
+      end
     end
     #--------------------------------------------------------------------------
     # • Data
@@ -477,68 +585,142 @@ Dax.register(:plugin, "dax", 3.0, [[:powershell, "dax"]]) {
     end
   end
   #============================================================================
-  # • Window_PluginManager
+  # • Plugin::Button
   #============================================================================
-  class Window_PluginManager < Window_Command
+  class Plugin::Button < Sprite
+    attr_accessor :clicked
     #--------------------------------------------------------------------------
-    # • Inicialização dos objetos.
+    # • Inicialização.
     #--------------------------------------------------------------------------
-    def initialize
-      super(0, 8)
-      self.y += 20
-      self.openness = 0
-      self.opacity = 0
-      self.back_opacity = 0
-      open
+    def initialize(pos, text, w=96, h=32, z=200, &block)
+      pos = pos.position
+      @action = block 
+      @clicked = false
+      super([w, h, pos.x, pos.y, z])
+      self.opacity = 127.5
+      Plugin::FONT_PROC[self.bitmap]
+      self.bitmap.fill_rect(self.rect, "14181f".color)
+      self.bitmap.draw_text_rect(text, 1)
     end
     #--------------------------------------------------------------------------
-    # • Largura da janela
+    # • Terminate
     #--------------------------------------------------------------------------
-    def window_width
-      return Graphics.width
+    def dispose
+      self.bitmap.dispose
+      super
     end
     #--------------------------------------------------------------------------
-    # • Lista dos comandos
+    # • Update
     #--------------------------------------------------------------------------
-    def make_command_list
-      add_command(Plugin::MSG[:BACK], :back)
-      Plugin.data.each_pair { |key, value|
-          next if value[:version] <= 0.0
-          date = value[:date].chop
-          title = value[:title].chop
-          str = sprintf(Plugin::MSG[:CL], title, key[1], value.get(:version).round(3), date)
-          skey = ("#{key[0]}_#{key[1]}").symbol
-          add_command(str, skey)
-      } 
+    def update
+      super
+    end
+    #----------------------------------------------------------------------------
+    # • O que irá acontecer sê o mouse estiver em cima do sprite?
+    #----------------------------------------------------------------------------
+    def mouse_over
+      self.opacity = 255
+    end
+    #----------------------------------------------------------------------------
+    # • O que irá acontecer sê o mouse não estiver em cima do sprite?
+    #----------------------------------------------------------------------------
+    def mouse_no_over
+      self.opacity = 127.5
+    end
+    #----------------------------------------------------------------------------
+    # • O que irá acontecer sê o mouse clicar no objeto
+    #----------------------------------------------------------------------------
+    def mouse_click
+      @clicked = true
+      @action.call rescue msgbox("error in action call")
     end
   end
   #============================================================================
-  # • Window_PluginManager
+  # • Plugin::Button_Plugin
   #============================================================================
-  class Window_PluginManagerConfirm < Window_Command
+  class Plugin::Button_Plugin < Sprite
+    attr_accessor :clicked
+    attr_accessor :delete
+    attr_accessor :about
     #--------------------------------------------------------------------------
-    # • Inicialização dos objetos.
+    # • Inicialização.
     #--------------------------------------------------------------------------
-    def initialize
-      super(0, 0)
-      Position[:center, self]
-      self.openness = 0
-#~       self.opacity = 0
-#~       self.back_opacity = 0
+    def initialize(pos, key, author)
+      @clicked = false
+      @info = Plugin.registerInfo(key, author)
+      @kea = [key, author]
+      pos = pos.position
+      super([Graphics.width, 48, pos.x, pos.y, 100])
+      self.bitmap.fill_rect(self.rect, "131d22".color)
+      thumbn = @info[:_path].select { |i| i.include?("/Thumbnail/") }
+      thumbp = Bitmap.new(thumbn.shift) rescue Bitmap.new(32,32)
+      src_rect = Rect.new(0, 0, thumbp.width, thumbp.height)
+      self.bitmap.stretch_blt(Rect.new(4, 3, 43, 43), thumbp, src_rect)
+      thumbp.dispose
+      Plugin::FONT_PROC[self.bitmap, :title]
+      self.bitmap.draw_text(52, 6, 314, 20, @info[:title].chop)
+      Plugin::FONT_PROC[self.bitmap, :small]
+      cl = [@info[:author], @info[:version], @info[:date].chop]
+      self.bitmap.draw_text(52, 28, 314, 18, Plugin::MSG[:CL] % cl)
+      @delete = Plugin::Button.new([Graphics.width + 100, self.y + 8], Plugin::MSG[:DELETE]) {
+        hresult = API::MessageBox.call(Plugin::MSG[:TITLE], Plugin::MSG[:DELGO], Plugin::MSG[:FORMAT])
+        if hresult == API::MessageBox::YES
+          Plugin.delete(key, author)
+        end
+      }
+      @about = Plugin::Button.new([Graphics.width + 100, self.y + 8], Plugin::MSG[:ABOUT]) {
+        msgbox(@info[:about])
+      }
+      @website = Plugin::Button.new([Graphics.width + 100, self.y + 8], Plugin::MSG[:WEBSITE]) {
+        hresult = API::MessageBox.call(Plugin::MSG[:TITLE], Plugin::MSG[:WEBGO], Plugin::MSG[:FORMAT])
+        if hresult == API::MessageBox::YES
+          url = @info[:website]
+          API.open_site(url)
+        end
+      }
     end
     #--------------------------------------------------------------------------
-    # • Largura da janela
+    # • Terminate
     #--------------------------------------------------------------------------
-    def window_width
-      return 164
+    def dispose
+      self.bitmap.dispose
+      super
+      @delete.dispose
+      @about.dispose
+      @website.dispose
     end
     #--------------------------------------------------------------------------
-    # • Lista dos comandos
+    # • Update
     #--------------------------------------------------------------------------
-    def make_command_list
-      add_command(Plugin::MSG[:ABOUT], :about)
-      add_command(Plugin::MSG[:DELETE], :delete) 
-      add_command(Plugin::MSG[:BACK], :back)
+    def update
+      super
+      @delete.update
+      @about.update
+      @website.update
+      @delete.y = self.y + 8
+      @about.y = @delete.y
+      @website.y = @about.y
+      @delete.slide_left(10, Graphics.width - 100)
+      @about.slide_left(10, Graphics.width - 196)
+      @website.slide_left(10, Graphics.width - 296)
+    end
+    #----------------------------------------------------------------------------
+    # • O que irá acontecer sê o mouse estiver em cima do sprite?
+    #----------------------------------------------------------------------------
+    def mouse_over
+      self.opacity = 255
+    end
+    #----------------------------------------------------------------------------
+    # • O que irá acontecer sê o mouse não estiver em cima do sprite?
+    #----------------------------------------------------------------------------
+    def mouse_no_over
+      self.opacity = 127.5
+    end
+    #----------------------------------------------------------------------------
+    # • O que irá acontecer sê o mouse clicar no objeto
+    #----------------------------------------------------------------------------
+    def mouse_click
+      @clicked = !@clicked
     end
   end
   #============================================================================
@@ -550,119 +732,54 @@ Dax.register(:plugin, "dax", 3.0, [[:powershell, "dax"]]) {
     #--------------------------------------------------------------------------
     def start
       super
-      @index = []
-      @keep = [Font.default_name, Font.default_size, Font.default_bold, Font.default_outline]
-      changeFont()
-      @title = Sprite_Text.new(8, 8, Graphics.width - 8, 18, "", 0)
-      create_window
-      @cwindow = Window_PluginManagerConfirm.new
-      @cwindow.set_handler(:about, method(:about))
-      @cwindow.set_handler(:delete, method(:deletePlugin))
-      @cwindow.set_handler(:back, method(:back))
-      @cwindow.active = false
-      @cwindow.visible = false
+      @data = []
+      @reset = Plugin::Button.new([0, 8], Plugin::MSG[:RESET]) {
+        hresult = API::MessageBox.call(Plugin::MSG[:TITLE], Plugin::MSG[:RESGO], Plugin::MSG[:FORMAT])
+        if hresult == API::MessageBox::YES
+          Plugin.reset
+        end
+        
+      }
+      @reset.position 1
+      @reset.x -= 56
+      @back = Plugin::Button.new([0, 8], Plugin::MSG[:BACK]) {
+        Plugin.backing
+      }
+      @back.position 1
+      @back.x += 56
+      create_list
       Graphics.wait(30)
     end
-    #--------------------------------------------------------------------------
-    # • ChangeFont
-    #--------------------------------------------------------------------------
-    def changeFont(name="Gotham", size=16, bold=true, outline=false)
-      Font.default_name = name
-      Font.default_size = size
-      Font.default_bold = bold
-      Font.default_outline = outline
-    end
-    #--------------------------------------------------------------------------
-    # • Criar window
-    #--------------------------------------------------------------------------
-    def create_window
-      @window = Window_PluginManager.new
-      @window.set_handler(:back, method(:backing))
+    
+    def create_list
+      @data.clear
       Plugin.data.each_pair { |key, value|
         next if value[:version] <= 0.0
-        skey = ("#{key[0]}_#{key[1]}").symbol
-        @window.set_handler(skey, method(:open))
-        @index << key
+        @data.push(Plugin::Button_Plugin.new([0,48],*key))
+      } 
+      @data.each_with_index { |i, n|
+        i.y += (48 * n)
       }
-    end
-    #--------------------------------------------------------------------------
-    # • Back
-    #--------------------------------------------------------------------------
-    def backing
-      changeFont(*@keep)
-      if Plugin::BEGIN_WITH_SCENEMANAGER
-        if SceneManager.stack.empty? or SceneManager.stack.first.is_a?(Scene_PluginManager)
-          SceneManager.goto(SceneManager.first_scene_class)
-        else
-          return_scene
-        end
-      else
-        return_scene
-      end
-    end
-    #--------------------------------------------------------------------------
-    # • Open
-    #--------------------------------------------------------------------------
-    def open
-      @cwindow.open
-      @cwindow.active = true
-      @cwindow.visible = true
-      @window.active = false
-    end
-    #--------------------------------------------------------------------------
-    # • about
-    #--------------------------------------------------------------------------
-    def about
-      current = @index[@window.index.pred]
-      back unless Plugin.registred?(*current)
-      msgbox(Plugin.registerInfo(*current)[:about])
-      back
-    end
-    #--------------------------------------------------------------------------
-    # • Delete
-    #--------------------------------------------------------------------------
-    def deletePlugin
-      current = @index[@window.index.pred]
-      back unless Plugin.registred?(*current)
-      Plugin.registerInfo(*current)[:path].each { |file|
-        puts "Deleting file... #{file}"
-        File.delete(file) if FileTest.exist?(file)
-        puts "File deleted!"
-      } rescue nil
-      Plugin.registerInfo(*current)[:_path].each { |file|
-        puts "Deleting file... #{file}"
-        File.delete(file) if FileTest.exist?(file)
-        puts "File deleted!"
-      } rescue nil
-      Plugin.data.delete(current)
-      Plugin.saveRegister()
-      hresult = API::MessageBox.call(Plugin::MSG[:TITLE], Plugin::MSG[:RF], Plugin::MSG[:FORMAT])
-      SceneManager.exit if hresult == API::MessageBox::YES
-      @window.refresh
-      back
-    end
-    #--------------------------------------------------------------------------
-    # • Back
-    #--------------------------------------------------------------------------
-    def back
-      @cwindow.active = false
-      @cwindow.visible = false
-      @window.active = true
     end
     #--------------------------------------------------------------------------
     # • terminate
     #--------------------------------------------------------------------------
     def terminate
       super
-      [@title, @window].each(&:dispose)
+      [@reset, @back].each(&:dispose)
+      @data.each(&:dispose) unless @data.empty?
     end
     #--------------------------------------------------------------------------
     # • update 
     #--------------------------------------------------------------------------
     def update
       super
-      [@title].each(&:update)
-      @title.text = Plugin::MSG[:PLMS] % Plugin.size
+      [@reset, @back].each(&:update)
+      @data.each(&:update) unless @data.empty?
+      @data.each { |i|
+        create_list if i.delete.clicked
+      }
+      create_list if @reset.clicked
     end
   end
   #============================================================================
@@ -708,8 +825,8 @@ Dax.register(:plugin, "dax", 3.0, [[:powershell, "dax"]]) {
   #============================================================================
   # • Insert here: The registers of the plugins.
   #============================================================================
-#~   Plugin.register(:ulse, :dax, 0.0, "http://pastebin.com/raw/eWxBengr")
-#~   Plugin.register(:steampunk_hud, :dax, 0.0, "http://pastebin.com/raw/mGjQMB95")
+  Plugin.register(:ulse, :dax, 0.0, "http://pastebin.com/raw/eWxBengr")
+  Plugin.register(:steampunk_hud, :dax, 0.0, "http://pastebin.com/raw/mGjQMB95")
   #============================================================================
   # • Run
   #============================================================================
