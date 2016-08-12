@@ -2,7 +2,7 @@
 # • Plugin
 #==============================================================================
 # Author: Dax
-# Version: 3.1
+# Version: 3.2
 # Site: www.dax-soft.weebly.com
 # Requeriment: Dax Core
 # tiagoms : Feedback that helped improve more on the project
@@ -37,14 +37,18 @@
 #    New PluginManager
 #    New tag command to parser.
 # [3.1]
-#    New PluginManaer, better.
+#    New PluginManager, better.
+# [3.2]
+#    Fix PLuginManager menu
+#    Disable/Enable plugin
 #==============================================================================
-Dax.register(:plugin, "dax", 3.1, [[:powershell, "dax"]]) {
+Dax.register(:plugin, "dax", 3.2, [[:powershell, "dax"]]) {
   #============================================================================
   # • Default Folders and Global Variable $ROOT_PATH
   #============================================================================
-  _dir = "#{Dir.pwd}/Data/Plugins"
-  Dir.mkdir(_dir) unless FileTest.directory?(_dir)
+  ["#{Dir.pwd}/Data/Plugins", "#{Dir.pwd}/Data/Plugins/About"].each { |_dir|
+    Dir.mkdir(_dir) unless FileTest.directory?(_dir)
+  }
   $ROOT_PATH = ->(filename, dir="") { "#{Dir.pwd}/Data/Plugins/#{dir}#{filename}" }
   #============================================================================
   # • Plugin
@@ -60,11 +64,11 @@ Dax.register(:plugin, "dax", 3.1, [[:powershell, "dax"]]) {
     # • Constants: Setup
     #--------------------------------------------------------------------------
     # Begin with the PluginManager
-    BEGIN_WITH_SCENEMANAGER = false
+    BEGIN_WITH_SCENEMANAGER = true
     # Key to active the menu
     KEY = :F8
     # Version of the Plugin
-    VERSION = "3.1"
+    VERSION = "3.2"
     # Temp file
     TEMP = "./temp.tmp"
     # Setup of the all message.
@@ -83,12 +87,18 @@ Dax.register(:plugin, "dax", 3.1, [[:powershell, "dax"]]) {
       REQUIRE: "The plugin %s from the author %s.\nRequires the plugin %s from the author %s to work.",
       DPBD: "While the download works, it's necessary that you keep the project open and stay in him.",
       SURE: "Are you sure that you want to download this file? %s",
-      ABOUT: "About",
-      WEBSITE: "Website",
+      ABOUT: "...",
+      INFO: "Info",
+      FILE: "File",
+      WEBSITE: "Contact",
       RESET: "Reset",
       WEBGO: "Are you sure that you want go to the website?",
       DELGO: "Are you sure that you want delete this plugin?",
       RESGO: "Are you sure that you want reset all this plugin?",
+      NEXT: "Next",
+      PRED: "Pred",
+      AD: "The plugin was disabled",
+      AD2: "The plugin was actiaved"
     }
     # Setup of the all tag
     RDIR = {
@@ -98,10 +108,12 @@ Dax.register(:plugin, "dax", 3.1, [[:powershell, "dax"]]) {
       audio: "./Audio/",
       movie: "./Movies/",
       data: "./Data/",
-      project: "./"
+      project: "./",
     }
     # Register file
     PLUGIN_REGISTER_FILE = "#{Dir.pwd}/Data/Plugin.rvdata2"
+    # Start with all plugin disabled
+    DISABLED = false
     #----------------------------------------------------------------------------
     # • Configuração das fontes usadas.
     #----------------------------------------------------------------------------
@@ -170,6 +182,9 @@ Dax.register(:plugin, "dax", 3.1, [[:powershell, "dax"]]) {
     #--------------------------------------------------------------------------
     @@register = {}
     @@download = {}
+    class << self; attr_accessor :buttonGeral; attr_accessor :currentPlugin end;
+    @buttonGeral = true
+    @currentPlugin = nil
     #--------------------------------------------------------------------------
     # • Run plugin
     #--------------------------------------------------------------------------
@@ -183,9 +198,15 @@ Dax.register(:plugin, "dax", 3.1, [[:powershell, "dax"]]) {
     # • Load all the plugin files
     #--------------------------------------------------------------------------
     def start()
-      loadRegister() 
+      loadRegister()
+      if DISABLED
+        Plugin.data.each_pair { |n,i|
+          i[:disabled] = true unless i[:disabled]
+        }
+      end
       @@register.each_value { |value|
         value[:path].each { |i|
+          next if value[:disabled]
           i.gsub!(/\/\/|\/\/\//, "/")
           puts "Running: %s" % i
           load_script(i) rescue next
@@ -229,7 +250,7 @@ Dax.register(:plugin, "dax", 3.1, [[:powershell, "dax"]]) {
       if hresult == API::MessageBox::YES
         SceneManager.exit 
       else
-        return
+        backing
       end
     end
     #--------------------------------------------------------------------------
@@ -258,6 +279,7 @@ Dax.register(:plugin, "dax", 3.1, [[:powershell, "dax"]]) {
         @@register[[hash[:name], hash[:author]]][:path] = []
         @@register[[hash[:name], hash[:author]]][:_path] = []
         @@register[[hash[:name], hash[:author]]][:thumbnail] = ""
+        @@register[[hash[:name], hash[:author]]][:disabled] = false
       else
         need.each { |needed|
           msg = sprintf(MSG[:REQUIRE], name, author, needed[0], needed[1])
@@ -447,7 +469,7 @@ Dax.register(:plugin, "dax", 3.1, [[:powershell, "dax"]]) {
       ["Version|version|V|v|ver|Ver", :version],
       ["Size|size|S|s", :size],
       ["Date|date|D|d", :date],
-      ["Website|website|Web|web|Site|site", :website]
+      ["Website|website|Web|web|Site|site|Contact|contact", :website]
     ]
     # General tag setting
     TAG_SETTING = [
@@ -589,6 +611,7 @@ Dax.register(:plugin, "dax", 3.1, [[:powershell, "dax"]]) {
   #============================================================================
   class Plugin::Button < Sprite
     attr_accessor :clicked
+    attr_accessor :active
     #--------------------------------------------------------------------------
     # • Inicialização.
     #--------------------------------------------------------------------------
@@ -596,6 +619,7 @@ Dax.register(:plugin, "dax", 3.1, [[:powershell, "dax"]]) {
       pos = pos.position
       @action = block 
       @clicked = false
+      @active = true
       super([w, h, pos.x, pos.y, z])
       self.opacity = 127.5
       Plugin::FONT_PROC[self.bitmap]
@@ -631,6 +655,9 @@ Dax.register(:plugin, "dax", 3.1, [[:powershell, "dax"]]) {
     # • O que irá acontecer sê o mouse clicar no objeto
     #----------------------------------------------------------------------------
     def mouse_click
+      return unless Plugin.buttonGeral
+      return unless @active
+      return unless self.visible
       @clicked = true
       @action.call rescue msgbox("error in action call")
     end
@@ -655,7 +682,7 @@ Dax.register(:plugin, "dax", 3.1, [[:powershell, "dax"]]) {
       thumbn = @info[:_path].select { |i| i.include?("/Thumbnail/") }
       thumbp = Bitmap.new(thumbn.shift) rescue Bitmap.new(32,32)
       src_rect = Rect.new(0, 0, thumbp.width, thumbp.height)
-      self.bitmap.stretch_blt(Rect.new(4, 3, 43, 43), thumbp, src_rect)
+      self.bitmap.stretch_blt(Rect.new(3.5, 3, 43, 43), thumbp, src_rect)
       thumbp.dispose
       Plugin::FONT_PROC[self.bitmap, :title]
       self.bitmap.draw_text(52, 6, 314, 20, @info[:title].chop)
@@ -669,15 +696,10 @@ Dax.register(:plugin, "dax", 3.1, [[:powershell, "dax"]]) {
         end
       }
       @about = Plugin::Button.new([Graphics.width + 100, self.y + 8], Plugin::MSG[:ABOUT]) {
-        msgbox(@info[:about])
+        Plugin.currentPlugin = @kea
+        SceneManager.call(Scene_PluginAbout)
       }
-      @website = Plugin::Button.new([Graphics.width + 100, self.y + 8], Plugin::MSG[:WEBSITE]) {
-        hresult = API::MessageBox.call(Plugin::MSG[:TITLE], Plugin::MSG[:WEBGO], Plugin::MSG[:FORMAT])
-        if hresult == API::MessageBox::YES
-          url = @info[:website]
-          API.open_site(url)
-        end
-      }
+      update
     end
     #--------------------------------------------------------------------------
     # • Terminate
@@ -687,7 +709,6 @@ Dax.register(:plugin, "dax", 3.1, [[:powershell, "dax"]]) {
       super
       @delete.dispose
       @about.dispose
-      @website.dispose
     end
     #--------------------------------------------------------------------------
     # • Update
@@ -696,13 +717,17 @@ Dax.register(:plugin, "dax", 3.1, [[:powershell, "dax"]]) {
       super
       @delete.update
       @about.update
-      @website.update
       @delete.y = self.y + 8
       @about.y = @delete.y
-      @website.y = @about.y
       @delete.slide_left(10, Graphics.width - 100)
       @about.slide_left(10, Graphics.width - 196)
-      @website.slide_left(10, Graphics.width - 296)
+      [self, @delete, @about].each { |i| 
+        i.opacity = 64 if Plugin.data[@kea][:disabled]
+        i.visible = self.visible
+      } rescue return
+      if Mouse.area?(*Rect.new(self.x+4, self.y+3, 43, 43).to_a)  
+        trigger?(0x01) { disableEnable }
+      end
     end
     #----------------------------------------------------------------------------
     # • O que irá acontecer sê o mouse estiver em cima do sprite?
@@ -720,7 +745,18 @@ Dax.register(:plugin, "dax", 3.1, [[:powershell, "dax"]]) {
     # • O que irá acontecer sê o mouse clicar no objeto
     #----------------------------------------------------------------------------
     def mouse_click
+      return unless self.visible
       @clicked = !@clicked
+    end
+    
+    def disableEnable
+      Plugin.buttonGeral = false
+      Plugin.data[@kea][:disabled] = !Plugin.data[@kea][:disabled]
+      Plugin.saveRegister
+      msgbox(Plugin.data[@kea][:disabled] ? Plugin::MSG[:AD] : Plugin::MSG[:AD2])
+      Graphics.wait(30)
+      Plugin.start
+      Plugin.buttonGeral = true
     end
   end
   #============================================================================
@@ -733,33 +769,56 @@ Dax.register(:plugin, "dax", 3.1, [[:powershell, "dax"]]) {
     def start
       super
       @data = []
+      @title = Sprite.new([316, 24, 8, 12, 200])
+      Plugin::FONT_PROC[@title.bitmap, :small]
+      @title.bitmap.draw_text_rect(Plugin::MSG[:PLMS] % Plugin.size)
       @reset = Plugin::Button.new([0, 8], Plugin::MSG[:RESET]) {
         hresult = API::MessageBox.call(Plugin::MSG[:TITLE], Plugin::MSG[:RESGO], Plugin::MSG[:FORMAT])
         if hresult == API::MessageBox::YES
+          return Plugin.size < 1
           Plugin.reset
+          exit
         end
         
       }
       @reset.position 1
-      @reset.x -= 56
+      @reset.x += 108
       @back = Plugin::Button.new([0, 8], Plugin::MSG[:BACK]) {
         Plugin.backing
       }
       @back.position 1
-      @back.x += 56
+      @back.x += 212
+      @index = 0
       create_list
-      Graphics.wait(30)
     end
     
     def create_list
+      return if Plugin.size < 1
       @data.clear
       Plugin.data.each_pair { |key, value|
         next if value[:version] <= 0.0
         @data.push(Plugin::Button_Plugin.new([0,48],*key))
       } 
+      posdata
+    end
+    
+    def posdata
       @data.each_with_index { |i, n|
-        i.y += (48 * n)
+        i.y = 48 + ( (48) * ( ( (@index + n) ) % @data.size ) )
       }
+      Graphics.wait(10)
+    end
+    
+    def nexto
+      return if @data.size < 8
+      @index = @index.next % @data.size
+      posdata
+    end
+  
+    def predo
+      return if @data.size < 8
+      @index = @index.pred % @data.size
+      posdata
     end
     #--------------------------------------------------------------------------
     # • terminate
@@ -774,12 +833,74 @@ Dax.register(:plugin, "dax", 3.1, [[:powershell, "dax"]]) {
     #--------------------------------------------------------------------------
     def update
       super
-      [@reset, @back].each(&:update)
+      [@reset, @back].each { |i|
+        i.update
+      }
       @data.each(&:update) unless @data.empty?
-      @data.each { |i|
+      @data.each_with_index { |i, n|
         create_list if i.delete.clicked
       }
       create_list if @reset.clicked
+      if Mouse.area?(0, 48, Graphics.width, 8)
+        nexto
+      elsif Mouse.area?(0, Graphics.height-8, Graphics.width, 8)
+        predo
+      end
+    end
+  end
+  #============================================================================
+  # • Scene_PluginAbout
+  #============================================================================
+  class Scene_PluginAbout < Scene_Base
+    #--------------------------------------------------------------------------
+    # • start
+    #--------------------------------------------------------------------------
+    def start
+      @plugin = Plugin.registerInfo(*Plugin.currentPlugin)
+      super
+      @title = Sprite.new([Graphics.width-32, 32, 16, 16, 200])
+      Plugin::FONT_PROC[@title.bitmap, :title]
+      @title.bitmap.draw_text_rect(@plugin[:title].chop, 0)
+      @back = Plugin::Button.new([0, 8], Plugin::MSG[:BACK]) {
+        SceneManager.return
+      }
+      @web = Plugin::Button.new([0,8], Plugin::MSG[:WEBSITE]) {
+        method(:website).call
+      }
+      @info = Plugin::Button.new([0,0], Plugin::MSG[:INFO]) {
+        msgbox @plugin[:about]
+      }
+      @current = Plugin::Button.new([0,0], Plugin::MSG[:FILE]) {
+        method(:current).call
+      }
+      [@back, @current, @web, @info].each_with_index { |i, n|
+        i.position 1
+        i.y = ( (Graphics.height - (48*4)) / 2 ) + 48 * n
+      }
+    end
+    
+    def website
+      msgbox @plugin[:website]
+    end
+    
+    def current
+      file = @plugin[:_path].select { |i| i.include?("/Plugins/About/") }
+      return if file.empty? or file.nil?
+      system(`start #{file.shift}`)
+    end
+    #--------------------------------------------------------------------------
+    # • terminate
+    #--------------------------------------------------------------------------
+    def terminate
+      super
+      [@title, @back, @web, @info, @current].each(&:dispose)
+    end
+    #--------------------------------------------------------------------------
+    # • update 
+    #--------------------------------------------------------------------------
+    def update
+      super
+      [@back, @web, @info, @current].each(&:update)
     end
   end
   #============================================================================
@@ -827,6 +948,8 @@ Dax.register(:plugin, "dax", 3.1, [[:powershell, "dax"]]) {
   #============================================================================
   Plugin.register(:ulse, :dax, 0.0, "http://pastebin.com/raw/eWxBengr")
   Plugin.register(:steampunk_hud, :dax, 0.0, "http://pastebin.com/raw/mGjQMB95")
+  Plugin.register(:event_bar, :dax, 0.0, "http://pastebin.com/raw/ZRLKKGA7")
+  Plugin.register(:sao_hud, :dax, 0.0, "http://pastebin.com/raw/XwcMq73M")
   #============================================================================
   # • Run
   #============================================================================
