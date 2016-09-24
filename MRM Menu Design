@@ -1,0 +1,953 @@
+#==============================================================================
+# • MRM Menu Design
+#==============================================================================
+# Autor: Dax
+# Versão: 1.6
+# Site: www.dax-soft.weebly.com
+# Requerimento: Dax Core i8.0>
+# fórum/site: http://www.mundorpgmaker.com.br/forum/index.php
+#==============================================================================
+# • Descrição: NÃO REQUER IMAGENS.
+#------------------------------------------------------------------------------
+#  Um Menu com o design inspirado no layout do fórum MRM. 
+#==============================================================================
+# • Versões:
+#------------------------------------------------------------------------------
+# 1.0 :
+#   - Versão inicial criada.
+#   - Menu principal pronto.
+# 1.1 :
+#   - Corrigido e adicionado algumas coisas, coisas pequenas.
+# 1.2 :
+#   - Menu de Sair re-criado.
+#   - Menu de Status re-criado.
+#   - Menu de Itens iniciado.
+# 1.3 :
+#   - Código melhorado(Um pouco).
+#   - Menu de Salvar
+#   - Menu de Carregar
+# 1.4 :
+#   - Menu de Salvar terminado.
+#   - Menu de Carregar terminado.
+#   - Menu de Itens terminado.
+#   - Menu de habilidade terminado.
+# 1.5 : 
+#   - Menu de Equipamento terminado.
+# 1.6 :
+#   - Atualizado para a nova versão do core
+#==============================================================================
+Dax.register(:mrm_menu_design, "Dax", 1.6) {
+#==============================================================================
+# • Configuração.
+#==============================================================================
+module MRM
+  #----------------------------------------------------------------------------
+  # • Configuração do menu.
+  #----------------------------------------------------------------------------
+  def self.setting
+    return {
+      # Usar uma imagem de fundo.
+      background: "",
+      # Posição da janela.
+      y: 96,
+      # Velocidade que ocorre o Slide.
+      speed_slide: 8,
+      # Cor de fundo... do layout 0
+      cbl0: Color.new.hex("2c3038"), 
+      # Cor de fundo... do layout 1
+      cbl1: Color.new.hex("31353e"),
+      # Primeira cor da linha que separa
+      ls0: Color.new.hex("1c1e22"),
+      # Segunda cor da linha que separa
+      ls1: Color.new.hex("25282e"),
+      # Terceira cor da linha que separa
+      ls2: Color.new.hex("3c3f48"),
+      # Cor do cursor.
+      cc: Color.new.hex("00acee"),
+      # Nome da fonte usada nos comandos..
+      cfn: "Century Gothic",
+      # Tamanho da fonte usada nos comandos...
+      cfs: 24,
+      # Usar negrito na fonte do comando.
+      cfb: true,
+      # Usar sombra na fonte do comando.
+      cfh: false,
+      # Usar borda na fonte do comando
+      cfb: false,
+      # Cor da fonte.
+      cfc: Color.new.default,
+      # Velocidade do slide da janela de Ajuda/Extra.
+      ssh: 8,
+      # Cor da janela de ajuda.
+      ch: Color.new.hex("00a4e3"),
+      # Configuração da descrição de cada comando..
+      help: [
+      "Checar inventário de itens.", # Itens
+      "Checar habilidades dos personagens.", # Skill
+      "Checar equipamentos dos personagens.", # Equip
+      "Checar a condição dos poersonagens.", # Status.
+      "Salvar o progresso do jogo.", # Salvar
+      "Carregar jogo salvo.", # Carregar
+      "Sair do jogo.", # Sair
+      ],
+      # Ícone do Gold,.. Caso você queira uma imagem basta por o nome dela
+      # entre áspas no lugar dos números. Ela deve estar na pasta System.
+      ig: 262,
+      # Ícone dos Passos,
+      is: 173,
+      # Velocidade para desaparecer janela;.
+      o: 15,
+      # Esconder barra onde mostrará o Gold é os passos. false - esconder / true - não
+      hii: true,
+      # Opções de fim de jogo.
+      end_options: ["Tela de título", "Cancelar", "Sair"],
+      # Cor da barra de HP.
+      hp: Color.new.hex("b85c5c"),
+      # Cor da barra de MP.
+      mp: Color.new.hex("5c5cb8"),
+      # Cor da barra de EXP.
+      exp: Color.new.hex("5cb85c"),
+      # Cor de fundo da barra.
+      bp: Color.new.hex("8a8a8a"),
+      # Velocidade do slide da barra de status
+      sss: 8,
+      # Windowskin necessária, pasta System.
+      w: "MRM Window Menu",
+      # Cor da janela da lista de item.
+      li: Color.new.hex("ffffff"),
+    }
+  end
+end
+#==============================================================================
+# • Bitmap.
+#==============================================================================
+class Bitmap
+  #----------------------------------------------------------------------------
+  # • Linha que separa.
+  #----------------------------------------------------------------------------
+  def line_separator(y, colors=[MRM.setting[:ls0], 
+    MRM.setting[:ls1], MRM.setting[:ls2]])
+    self.fill_rect(0, y, self.width, 1, colors[0])
+    self.fill_rect(0, y+1, self.width, 3, colors[1])
+    self.fill_rect(0, y+4, self.width, 1, colors[2])
+  end
+  #----------------------------------------------------------------------------
+  # • Linha que separa na vertical.
+  #----------------------------------------------------------------------------
+  def line_separator_vertical(x, colors=[MRM.setting[:ls0], 
+    MRM.setting[:ls1], MRM.setting[:ls2]])
+    self.fill_rect(x, 0, 1, self.height, colors[0])
+    self.fill_rect(x+1, 0, 3, self.height, colors[1])
+    self.fill_rect(x+4, 0, 1, self.height, colors[2])
+  end
+  #----------------------------------------------------------------------------
+  # • ícone.
+  #----------------------------------------------------------------------------
+  def draw_icon_(icon_index, x, y, enabled = true)
+    if icon_index.is_a?(String)
+      bitmap = Cache.systme(icon_index)
+      rect = Rect.new(0, 0, 24, 24)
+    else
+      icon_index = icon_index.nil? ? 0 : icon_index
+      bitmap = Cache.system("Iconset")
+      rect = Rect.new(icon_index % 16 * 24, icon_index / 16 * 24, 24, 24)
+    end
+    self.blt(x, y, bitmap, rect, enabled ? 255 : 128)
+  end
+  #--------------------------------------------------------------------------
+  # * Desenho do texto com caracteres de controle
+  #--------------------------------------------------------------------------
+  def draw_text_two_line(x, y, width, height, text, align)
+    text_two = $1.to_s if text.match(/\n([^>]*)/)
+    text_one = $1.to_s if text.match(/([^>]*)\n/)
+    self.draw_text(x, y, width, height, text_one, align)
+    self.draw_text(x, y+height, width, height, text_two, align)
+  end
+  #--------------------------------------------------------------------------
+  # * Desenho do gráfico de rosto
+  #     face_name  : nome do gráfico de face
+  #     face_index : índice do gráfico de face
+  #     x          : coordenada X
+  #     y          : coordenada Y
+  #     enabled    : habilitar flag, translucido quando false
+  #--------------------------------------------------------------------------
+  def draw_face(face_name, face_index, x, y, enabled = true)
+    bitmap = Cache.face(face_name)
+    rect = Rect.new(face_index % 4 * 96, face_index / 4 * 96, 96, 96)
+    self.blt(x, y, bitmap, rect, enabled ? 255 : translucent_alpha)
+    bitmap.dispose
+  end  
+  #--------------------------------------------------------------------------
+  # * Desenho do gráfico de face do herói
+  #     actor   : herói
+  #     x       : coordenada X
+  #     y       : coordenada Y
+  #     enabled : habilitar flag, translucido quando false
+  #--------------------------------------------------------------------------
+  def draw_actor_face(actor, x, y, enabled = true)
+    draw_face(actor.face_name, actor.face_index, x, y, enabled)
+  end
+end
+#==============================================================================
+# • Menu Principal.
+#==============================================================================
+Dax.remove(:Scene_Menu)
+class Scene_Menu < Scene_Base
+  #----------------------------------------------------------------------------
+  # • Inicialização dos objetos.
+  #----------------------------------------------------------------------------
+  def start
+    super
+    create_background
+    @actor_index = 0
+    @sprite = Sprite.new([160, 224])
+    @sprite.x, @sprite.y = -160, MRM.setting[:y]
+    @sprite.bitmap.fill_rect(@sprite.rect, MRM.setting[:cbl0])
+    @sprite.bitmap.fill_rect(0, 1, @sprite.width-2, @sprite.height-2, MRM.setting[:cbl1])
+    [32, 64, 96, 128, 160, 192].each { |y| @sprite.bitmap.line_separator(y) }
+    @commands = ["Itens", "Skill", "Equipamento", "Status", "Salvar", "Carregar", "Sair"]
+    @sprite_text = Sprite.new([160, 224])
+    @sprite_text.x, @sprite_text.y, @sprite_text.z = @sprite.x, @sprite.y, 20
+    @bitmap_text = Bitmap.new(160, 32 * @commands.size)
+    @bitmap_text.font.name = MRM.setting[:cfn]
+    @bitmap_text.font.size = MRM.setting[:cfs]
+    @bitmap_text.font.bold = MRM.setting[:cfb]
+    @bitmap_text.font.shadow = MRM.setting[:cfh]
+    @bitmap_text.font.outline = MRM.setting[:cfb]
+    @bitmap_text.font.color = MRM.setting[:cfc]
+    (0...@commands.size).each { |i|
+     @bitmap_text.draw_text(4, (32*i), @bitmap_text.width, 32, @commands[i])
+    }
+    @sprite_text.bitmap.blt(0, 0, @bitmap_text, @sprite_text.rect)
+    @index = Sprite.new([160, 32])
+    @index.bitmap.fill_rect(@index.rect, MRM.setting[:cc])
+    @index.x, @index.y = @sprite.x, @sprite.y
+    @cursor = 0
+    @help_window = Sprite.new([Graphics.width, 32])
+    @help_window.x += @help_window.width
+    @extra = Sprite.new([Graphics.width, 32])
+    @extra.x -= @extra.width
+    @extra.y = Graphics.height - 32
+    @extra.bitmap.fill_rect(@extra.rect,  MRM.setting[:cbl0])
+    @extra.bitmap.fill_rect(0, 1, @extra.width-2, @extra.height-2, MRM.setting[:cbl1])
+    @extra.bitmap.line_separator_vertical(272)
+    @extra.bitmap.draw_icon_(MRM.setting[:ig], 4, 4)
+    @extra.bitmap.draw_text(30, 0, 272-30, 32, ": #{$game_party.gold}")
+    @extra.bitmap.draw_icon_(MRM.setting[:is], @extra.width-26, 4)
+    @extra.bitmap.draw_text(@extra.width-46, 0, 276-30, 32, "#{$game_party.steps} :")
+    @extra.visible = MRM.setting[:hii]
+  end
+  #--------------------------------------------------------------------------
+  # • Criação do plano de fundo
+  #--------------------------------------------------------------------------
+  def create_background
+    @background_sprite = Sprite.new
+    if MRM.setting[:background].empty?
+      @background_sprite.bitmap = SceneManager.background_bitmap
+      @background_sprite.color.set(16, 16, 16, 128)
+    else
+      @background_sprite.bitmap = "C:S:#{MRM.setting[:background]}".script
+    end
+  end
+  #----------------------------------------------------------------------------
+  # • Renovação dos objetos.
+  #----------------------------------------------------------------------------
+  def terminate
+    super
+    [@background_sprite, @sprite, @sprite_text, @index,
+    @help_window, @extra].each(&:dispose)
+  end
+  #----------------------------------------------------------------------------
+  # • Atualização dos objetos.
+  #----------------------------------------------------------------------------
+  def update
+    super
+    return_scene if trigger?(:B)
+    @help_window.bitmap.clear
+    @help_window.bitmap.fill_rect(@help_window.rect, MRM.setting[:ch])
+    font_help_window
+    @extra.slide_right(MRM.setting[:ssh], 0) 
+    @help_window.slide_left(MRM.setting[:ssh], 0)
+    @sprite.slide_right(MRM.setting[:speed_slide], 0) 
+    @sprite_text.x = @sprite.x
+    @index.x = @sprite.x
+    trigger?(:DOWN) { @cursor = @cursor.next % @commands.size }
+    trigger?(:UP) { @cursor = @cursor.pred % @commands.size }
+    @index.y = @sprite.y + (@cursor * 32)
+    @help_window.bitmap.draw_text(4, 0, @help_window.width, 32, 
+      MRM.setting[:help][@cursor], 1)
+    Sound.play_cursor if trigger?(:DOWN) or trigger?(:UP)
+    Sound.play_ok if trigger?(:C) and @cursor != 0 and @cursor != 1
+    case @cursor
+    when 0 then SceneManager.call(Scene_Item) if trigger?(:C)
+    when 1 then SceneManager.call(Scene_Skill) if trigger?(:C)
+    when 2 then SceneManager.call(Scene_Equip) if trigger?(:C)
+    when 3 then SceneManager.call(Scene_Status) if trigger?(:C)
+    when 4 then SceneManager.call(Scene_Save) if trigger?(:C)
+    when 5 then SceneManager.call(Scene_Load) if trigger?(:C)
+    when 6 then SceneManager.call(Scene_End) if trigger?(:C)
+    end
+  end
+  #----------------------------------------------------------------------------
+  # • Fonte do Help Window.
+  #----------------------------------------------------------------------------
+  def font_help_window
+    [@help_window.bitmap].each { |i|
+      i.font.name = MRM.setting[:cfn]
+      i.font.size = MRM.setting[:cfs]
+      i.font.bold = MRM.setting[:cfb]
+      i.font.shadow = MRM.setting[:cfh]
+      i.font.outline = MRM.setting[:cfb]
+      i.font.color = MRM.setting[:cfc]
+    }
+  end
+end
+#==============================================================================
+# • Scene_End
+#==============================================================================
+Dax.remove(:Scene_End)
+class Scene_End < Scene_Base
+  #--------------------------------------------------------------------------
+  # * Inicialização do processo
+  #--------------------------------------------------------------------------
+  def start
+    super
+    create_background
+    @cursor = 0
+    @tag = Sprite.new([128, 32])
+    @tag.bitmap.fill_rect(@tag.rect, MRM.setting[:cc])
+    @tag.x -= 128
+    @boptions = Sprite.new([160, 96])
+    @boptions.position(:center)
+    @boptions.bitmap.fill_rect(@boptions.rect, MRM.setting[:cbl0])
+    @boptions.bitmap.fill_rect(0, 1, @boptions.width-2, @boptions.height-2, MRM.setting[:cbl1])
+    @text = Sprite.new([160, 96])
+    @text.position(:center)
+    @text.z = 20
+    @index = Sprite.new([160, 32])
+    @index.x, @index.y = @boptions.x, @boptions.y
+    @index.bitmap.fill_rect(@index.rect, MRM.setting[:cc])
+    [@tag.bitmap, @text.bitmap].each do |i|
+      i.font.name = MRM.setting[:cfn]
+      i.font.size = MRM.setting[:cfs]
+      i.font.bold = MRM.setting[:cfb]
+      i.font.shadow = MRM.setting[:cfh]
+      i.font.outline = MRM.setting[:cfb]
+      i.font.color = MRM.setting[:cfc]
+    end
+    [32, 64].each { |y| @boptions.bitmap.line_separator(y) }
+    MRM.setting[:end_options].each_with_index { |value, index|
+     @text.bitmap.draw_text(4, 32*index, @text.width, 32, value)
+    }
+    @tag.bitmap.draw_text_rect("Sair", 1)
+  end
+  #--------------------------------------------------------------------------
+  # * Criação do plano de fundo
+  #--------------------------------------------------------------------------
+  def create_background
+    if MRM.setting[:background].empty?
+      @background = Sprite.new
+      @background.bitmap = SceneManager.background_bitmap
+      @background.color.set(16, 16, 16, 128)
+    else
+      @background = Sprite.new("S: #{MRM.setting[:background]}")
+    end
+    @background.tone.set(0, 0, 0, 128)
+  end
+  #--------------------------------------------------------------------------
+  # * Comando [Para o Título]
+  #--------------------------------------------------------------------------
+  def command_to_title
+    fadeout_all
+    SceneManager.goto(Scene_Title)
+  end
+  #--------------------------------------------------------------------------
+  # * Comando [Sair]
+  #--------------------------------------------------------------------------
+  def command_shutdown
+    fadeout_all
+    SceneManager.exit
+  end
+  #----------------------------------------------------------------------------
+  # • Renovação dos objetos.
+  #----------------------------------------------------------------------------
+  def terminate
+    super
+    [@tag, @boptions, @text, @index].each(&:dispose)
+  end
+  #----------------------------------------------------------------------------
+  # • Atualização dos objetos.
+  #----------------------------------------------------------------------------
+  def update
+    super
+    @tag.slide_right(8,0)
+    trigger?(:DOWN) { @cursor = @cursor.next % 2 }
+    trigger?(:UP) { @cursor = @cursor.pred % 2 }
+    @index.y = @boptions.y + (32 * @cursor)
+    Sound.play_cursor if trigger?(:DOWN) or trigger?(:UP)
+    Sound.play_ok if trigger?(:C)
+    command_to_title if trigger?(:C) and @cursor == 0
+    return_scene if (trigger?(:C) and @cursor == 1) or trigger?(:B)
+    command_shutdown if trigger?(:C) and @cursor == 2
+  end
+end
+#==============================================================================
+# • Menu de Status.
+#==============================================================================
+Dax.remove(:Scene_Status)
+class Scene_Status < Scene_Base
+  #----------------------------------------------------------------------------
+  # • Inicialização dos objetos.
+  #----------------------------------------------------------------------------
+  def start
+    super
+    create_background
+    @actor = $game_party.menu_actor
+    @name_class_nick = Sprite.new([448, 32])
+    @name_class_nick.x, @name_class_nick.y = 448, 16
+    @fhpmpexplv = Sprite.new([544, 148])
+    @fhpmpexplv.x, @fhpmpexplv.y = -@fhpmpexplv.width, 64
+    @colors=[MRM.setting[:ls0], MRM.setting[:ls1], MRM.setting[:ls2]]
+    @equip = Sprite.new([200, 160])
+    @equip.x, @equip.y = -200, 228
+    refresh
+    @info0 = Sprite.new([300, 32])
+    @info0.x, @info0.y = Graphics.width, Graphics.height-62
+    @info0.bitmap.fill_rect(@info0.rect, MRM.setting[:cc])
+    @info1 = Sprite.new([300, 32])
+    @info1.x, @info1.y = Graphics.width, Graphics.height-102
+    @info1.bitmap.fill_rect(@info0.rect, MRM.setting[:cc])
+    [@info0.bitmap, @info1.bitmap].each do |i|
+      i.font.name = MRM.setting[:cfn]
+      i.font.size = MRM.setting[:cfs] - 2
+      i.font.bold = true
+      i.font.shadow = MRM.setting[:cfh]
+      i.font.outline = MRM.setting[:cfb]
+      i.font.color = MRM.setting[:cfc]
+    end
+    @info0.bitmap.draw_text_rect("> : Mudar para o próximo personagem", 1)
+    @info1.bitmap.draw_text_rect("< : Mudar para o personagem anterior", 1)
+  end
+  #--------------------------------------------------------------------------
+  # • Criação do plano de fundo
+  #--------------------------------------------------------------------------
+  def create_background
+    if MRM.setting[:background].empty?
+      @background = Sprite.new
+      @background.bitmap = SceneManager.background_bitmap
+      @background.color.set(16, 16, 16, 128)
+    else
+      @background = Sprite.new("S: #{MRM.setting[:background]}")
+    end
+    @background.tone.set(0, 0, 0, 128)
+  end
+  #----------------------------------------------------------------------------
+  # • Renovação dos objetos.
+  #----------------------------------------------------------------------------
+  def terminate
+    super
+    [@background, @fhpmpexplv, @equip, @info0, @info1].each(&:dispose)
+  end
+  #----------------------------------------------------------------------------
+  # • Atualização dos objetos.
+  #----------------------------------------------------------------------------
+  def update
+    super
+    @name_class_nick.slide_left(MRM.setting[:sss], Graphics.width - @name_class_nick.width)
+    @fhpmpexplv.slide_right(MRM.setting[:sss], 0)
+    @equip.slide_right(MRM.setting[:sss], 0)
+    @info0.slide_left(MRM.setting[:sss], Graphics.width-@info0.width)
+    @info1.slide_left(MRM.setting[:sss], Graphics.width-@info1.width)
+    return_scene if trigger?(:B)
+    if trigger?(:RIGHT)
+      menu_actor_next
+      refresh
+    elsif trigger?(:LEFT)
+      menu_actor_prev
+      refresh
+    end
+  end
+  #--------------------------------------------------------------------------
+  # • Selecionar próximo herói no menu
+  #--------------------------------------------------------------------------
+  def menu_actor_next
+    index = $game_party.members.index(@actor) || -1
+    index = (index + 1) % $game_party.members.size
+    $game_party.menu_actor = $game_party.members[index]
+  end
+  #--------------------------------------------------------------------------
+  # • Selecionar herói anterior no menu
+  #--------------------------------------------------------------------------
+  def menu_actor_prev
+    index = $game_party.members.index($game_party.menu_actor) || 1
+    index = (index + $game_party.members.size - 1) % $game_party.members.size
+    $game_party.menu_actor = $game_party.members[index]
+  end
+  #----------------------------------------------------------------------------
+  # • Atualizar objetos.
+  #----------------------------------------------------------------------------
+  def refresh
+    @actor = $game_party.menu_actor
+    @name_class_nick.bitmap.clear
+    @fhpmpexplv.bitmap.clear
+    @equip.bitmap.clear
+    @name_class_nick.bitmap.fill_rect(@name_class_nick.rect, MRM.setting[:cbl0])
+    @name_class_nick.bitmap.fill_rect(0, 1, @name_class_nick.width-2, @name_class_nick.height-2, MRM.setting[:cbl1])
+    [149, 298].each{ |x| @name_class_nick.bitmap.line_separator_vertical(x) }
+    @fhpmpexplv.bitmap.fill_rect(@fhpmpexplv.rect, MRM.setting[:cbl0])
+    @fhpmpexplv.bitmap.fill_rect(0, 1, @fhpmpexplv.width-2, @fhpmpexplv.height-2, MRM.setting[:cbl1])
+    [8, 120].each { |x| @fhpmpexplv.bitmap.line_separator_vertical(x) }
+    [8, @fhpmpexplv.height-11].each { |y| @fhpmpexplv.bitmap.line_separator(y) }
+    @fhpmpexplv.bitmap.draw_actor_face(@actor, 18, 26)
+    [128,268,408].each{|x|@fhpmpexplv.bitmap.fill_rect(x, 72, 132, 18, MRM.setting[:bp])}
+    [64, 94].each { |y|
+    @fhpmpexplv.bitmap.fill_rect(120, y, @fhpmpexplv.width, 1, @colors[0])
+    @fhpmpexplv.bitmap.fill_rect(120, y+1, @fhpmpexplv.width, 3, @colors[1])
+    @fhpmpexplv.bitmap.fill_rect(120, y+4, @fhpmpexplv.width, 1, @colors[2])}
+    @fhpmpexplv.bitmap.fill_rect(128, 72, 132.to_p(@actor.hp,@actor.mhp),18,MRM.setting[:hp])
+    @fhpmpexplv.bitmap.fill_rect(268, 72, 132.to_p(@actor.mp,@actor.mmp),18,MRM.setting[:mp])
+    @fhpmpexplv.bitmap.fill_rect(408, 72, 132.to_p(@actor.exp,@actor.next_level_exp),18,MRM.setting[:exp])
+    @equip.bitmap.fill_rect(@equip.rect, MRM.setting[:cbl0])
+    @equip.bitmap.fill_rect(0, 1, @equip.width-2, @equip.height-2, MRM.setting[:cbl1])
+    [32, 64, 96, 128].each { |y| @equip.bitmap.line_separator(y) }
+    [@name_class_nick.bitmap, @fhpmpexplv.bitmap, @equip.bitmap].each do |i|
+      i.font.name = MRM.setting[:cfn]
+      i.font.size = MRM.setting[:cfs]-2
+      i.font.bold = MRM.setting[:cfb]
+      i.font.shadow = MRM.setting[:cfh]
+      i.font.outline = MRM.setting[:cfb]
+      i.font.color = MRM.setting[:cfc]
+    end
+    @name_class_nick.bitmap.draw_text(4, 0, 149, 32, @actor.name, 1)
+    @name_class_nick.bitmap.draw_text(153, 0, 149, 32, @actor.class.name, 1)
+    @name_class_nick.bitmap.draw_text(302, 0, 149, 32, @actor.nickname, 1)
+    @fhpmpexplv.bitmap.draw_text_two_line(125, 14, 544-116, 24,@actor.description, 1)
+    @fhpmpexplv.bitmap.draw_text(120, 106, 544-108, 24, "Atk: #{@actor.param(0)} Def: #{@actor.param(1)} Int: #{@actor.param(2)} Res: #{@actor.param(3)} Agl: #{@actor.param(4)} Srt: #{@actor.param(5)}", 1)
+    @actor.equips.each_with_index do |item,i|
+       return unless item
+       @equip.bitmap.draw_icon(item.icon_index, 4, 4+(32*i))
+       @equip.bitmap.draw_text(30, 32*i, @equip.width-30, 32, item.name, 1)
+    end
+  end
+end
+#==============================================================================
+# ** Window_HelpMenu
+#------------------------------------------------------------------------------
+#  Esta janela exibe explicação de habilidades e itens e outras informações.
+#==============================================================================
+class Window_HelpMenu < Window_Base
+  #--------------------------------------------------------------------------
+  # * Inicialização do objeto
+  #     line_number : número de linhas
+  #--------------------------------------------------------------------------
+  def initialize(line_number = 2)
+    super(0, 0, Graphics.width, fitting_height(line_number))
+    self.windowskin = Cache.system(MRM.setting[:w])
+  end
+  #--------------------------------------------------------------------------
+  # * Configuração de texto
+  #     text : texto
+  #--------------------------------------------------------------------------
+  def set_text(text)
+    if text != @text
+      @text = text
+      refresh
+    end
+  end
+  #--------------------------------------------------------------------------
+  # * Limpeza
+  #--------------------------------------------------------------------------
+  def clear
+    set_text("")
+  end
+  #--------------------------------------------------------------------------
+  # * Definição de item
+  #     item : habilidades, itens, etc.
+  #--------------------------------------------------------------------------
+  def set_item(item)
+    set_text(item ? item.description : "")
+  end
+  #--------------------------------------------------------------------------
+  # * Renovação
+  #--------------------------------------------------------------------------
+  def refresh
+    contents.clear
+      contents.font.name = MRM.setting[:cfn]
+      contents.font.bold = MRM.setting[:cfb]
+      contents.font.shadow = MRM.setting[:cfh]
+      contents.font.outline = MRM.setting[:cfb]
+      contents.font.color = MRM.setting[:cfc]
+    contents.fill_rect(contents.rect, MRM.setting[:ch])
+    draw_text_ex(4, 0, @text)
+  end
+end
+#==============================================================================
+# • Window_ItemCategory
+#==============================================================================
+class Window_ItemCategory < Window_HorzCommand
+  alias :w_initialize :initialize
+  def initialize(*args)
+    w_initialize(*args)
+    self.windowskin = Cache.system(MRM.setting[:w])
+  end
+end
+#==============================================================================
+# • Window_ItemList
+#==============================================================================
+class Window_ItemList < Window_Selectable
+  alias :w_initialize :initialize
+  def initialize(*args)
+    w_initialize(*args)
+    self.windowskin = Cache.system(MRM.setting[:w])
+  end
+end
+#==============================================================================
+# • Scene_Item
+#==============================================================================
+class Scene_Item < Scene_ItemBase
+  #--------------------------------------------------------------------------
+  # • Criação do plano de fundo
+  #--------------------------------------------------------------------------
+  def create_background
+    if MRM.setting[:background].empty?
+      @background_sprite = Sprite.new
+      @background_sprite.bitmap = SceneManager.background_bitmap
+      @background_sprite.color.set(16, 16, 16, 128)
+    else
+      @background_sprite = Sprite.new("S: #{MRM.setting[:background]}")
+    end
+    @background_sprite.tone.set(0, 0, 0, 128)
+  end
+  #--------------------------------------------------------------------------
+  # * Inicialização do processo
+  #--------------------------------------------------------------------------
+  def start
+    super
+    @options = Sprite.new([544, 32])
+    @options.y = 80
+    @options.bitmap.fill_rect(@options.rect, MRM.setting[:cbl0])
+    @options.bitmap.fill_rect(0, 1, @options.width-2, @options.height-2, MRM.setting[:cbl1])
+    [2, 138, 270, 402, 537].each { |y| @options.bitmap.line_separator_vertical(y) }
+    create_help_window
+    create_category_window
+    create_item_window
+    @list = Sprite.new([544, 416])
+    @list.z = 0
+    @list.bitmap.fill_rect(@list.rect, MRM.setting[:cbl0])
+    [77,110].each { |y| @list.bitmap.line_separator(y) }
+    @list.bitmap.line_separator_vertical((544-5)/2)
+  end
+  #--------------------------------------------------------------------------
+  # • Criação da janela de ajuda.
+  #--------------------------------------------------------------------------
+  def create_help_window
+    @help_window = Window_HelpMenu.new
+    @help_window.viewport = @viewport
+  end
+  #----------------------------------------------------------------------------
+  # • Renovação dos objetos.
+  #----------------------------------------------------------------------------
+  def terminate
+    super
+    @options.dispose
+    @list.dispose
+  end
+  #----------------------------------------------------------------------------
+  # • Atualização dos objetos.
+  #----------------------------------------------------------------------------
+  def update
+    super
+  end
+end
+#==============================================================================
+# • Scene_File
+#==============================================================================
+class Scene_File < Scene_MenuBase
+  #--------------------------------------------------------------------------
+  # • Criação do plano de fundo
+  #--------------------------------------------------------------------------
+  def create_background
+    if MRM.setting[:background].empty?
+      @background = Sprite.new
+      @background.bitmap = SceneManager.background_bitmap
+      @background.color.set(16, 16, 16, 128)
+    else
+      @background = Sprite.new("S: #{MRM.setting[:background]}")
+    end
+    @background.tone.set(0, 0, 0, 128)
+  end
+  #--------------------------------------------------------------------------
+  # • Inicialização do processo
+  #--------------------------------------------------------------------------
+  def start
+    super
+    create_background
+    @fill = Sprite.new([544, 416])
+    @fill.bitmap.fill_rect(@fill.rect, MRM.setting[:cbl0])
+    [40, 124, 214, 324, 414].each { |y| @fill.bitmap.line_separator(y) }
+    @fill.bitmap.line_separator_vertical(8)
+    create_help_window
+    create_savefile_viewport
+    create_savefile_windows
+    init_selection
+  end
+  #--------------------------------------------------------------------------
+  # • Finalização do processo
+  #--------------------------------------------------------------------------
+  def terminate
+    Graphics.freeze
+    dispose_all_windows
+    dispose_main_viewport
+    @fill.dispose
+    @background.dispose
+    @savefile_viewport.dispose
+    @savefile_windows.each(&:dispose)
+  end
+  #--------------------------------------------------------------------------
+  # • Criação da janela de ajuda.
+  #--------------------------------------------------------------------------
+  def create_help_window
+    @help_window = Window_HelpMenu.new(1)
+    @help_window.set_text(help_window_text)
+  end
+end
+#==============================================================================
+# • Window_SaveFile
+#==============================================================================
+class Window_SaveFile < Window_Base
+  #--------------------------------------------------------------------------
+  # • Inicialização do objeto
+  #--------------------------------------------------------------------------
+  def initialize(height, index)
+    super(0, index * height, Graphics.width, height)
+    self.z = 500
+    self.windowskin = Cache.system(MRM.setting[:w])
+    @file_index = index
+    refresh
+    @selected = false
+  end
+end
+#==============================================================================
+# ** Scene_Skill
+#------------------------------------------------------------------------------
+#  Esta classe executa o processamento da tela de habilidades. Por conveniência
+# dos processos em comum, as habilidades são tratdas como [Itens].
+#==============================================================================
+
+class Scene_Skill < Scene_ItemBase
+  #--------------------------------------------------------------------------
+  # * Inicialização do processo
+  #--------------------------------------------------------------------------
+  def start
+    super
+    @fill = Sprite.new([544, 416])
+    @fill.bitmap.fill_rect(@fill.rect, MRM.setting[:cbl0])
+    [65, 185].each { |y| @fill.bitmap.line_separator(y) }
+    @fill.bitmap.line_separator_vertical(8)
+    @fill2 = Sprite.new([544, 416-190])
+    @fill2.y = 190
+    @fill2.bitmap.line_separator_vertical((544-5)/2)
+    create_help_window
+    create_command_window
+    create_status_window
+    create_item_window
+  end
+  #--------------------------------------------------------------------------
+  # * Renovação do processo
+  #--------------------------------------------------------------------------
+  def terminate
+    super
+    @fill.dispose
+    @fill2.dispose
+  end
+  #--------------------------------------------------------------------------
+  # • Criação da janela de ajuda.
+  #--------------------------------------------------------------------------
+  def create_help_window
+    @help_window = Window_HelpMenu.new
+    @help_window.viewport = @viewport
+  end
+end
+#==============================================================================
+# ** Window_SkillCommand
+#==============================================================================
+class Window_SkillCommand < Window_Command
+  #--------------------------------------------------------------------------
+  # * Variáveis públicas
+  #--------------------------------------------------------------------------
+  attr_reader   :skill_window
+  #--------------------------------------------------------------------------
+  # * Inicialização do objeto
+  #     x      : coordenada X
+  #     y      : coordenada Y
+  #--------------------------------------------------------------------------
+  def initialize(x, y)
+    super(x, y)
+    self.windowskin = Cache.system(MRM.setting[:w])
+    @actor = nil
+  end
+end
+#==============================================================================
+# ** Window_SkillStatus
+#==============================================================================
+
+class Window_SkillStatus < Window_Base
+  #--------------------------------------------------------------------------
+  # * Inicialização do objeto
+  #     x      : coordenada X
+  #     y      : coordenada Y
+  #--------------------------------------------------------------------------
+  def initialize(x, y)
+    super(x, y, window_width, fitting_height(4))
+    self.windowskin = Cache.system(MRM.setting[:w])
+    @actor = nil
+  end
+end
+#==============================================================================
+# ** Window_SkillList
+#==============================================================================
+class Window_SkillList < Window_Selectable
+  #--------------------------------------------------------------------------
+  # * Inicialização do objeto
+  #     x      : coordenada X
+  #     y      : coordenada Y
+  #     width  : largura
+  #     height : altura
+  #--------------------------------------------------------------------------
+  def initialize(x, y, width, height)
+    super
+    self.windowskin = Cache.system(MRM.setting[:w])
+    @actor = nil
+    @stype_id = 0
+    @data = []
+  end
+end
+#==============================================================================
+# ** Scene_Equip
+#------------------------------------------------------------------------------
+#  Esta classe executa o processamento da tela de equipamentos.
+#==============================================================================
+
+class Scene_Equip < Scene_MenuBase
+  #--------------------------------------------------------------------------
+  # * Inicialização do processo
+  #--------------------------------------------------------------------------
+  def start
+    super
+    @fill = Sprite.new([544, 416])
+    @fill.bitmap.fill_rect(@fill.rect, MRM.setting[:cbl0])
+    [65,255].each { |y| @fill.bitmap.line_separator(y) }
+    @fill.bitmap.line_separator_vertical(8)
+    @fill1 = Sprite.new([544, 416-255])
+    @fill1.y=255
+    @fill1.bitmap.line_separator_vertical((544-5)/2)
+    @fill2 = Sprite.new([544, 190])
+    @fill2.y = 65
+    @fill2.bitmap.line_separator_vertical(200)
+    create_help_window
+    create_status_window
+    create_command_window
+    create_slot_window
+    create_item_window
+  end
+  #--------------------------------------------------------------------------
+  # * Criação da janela de ajuda.
+  #--------------------------------------------------------------------------
+  def create_help_window
+    @help_window = Window_HelpMenu.new
+    @help_window.viewport = @viewport
+  end
+  #--------------------------------------------------------------------------
+  # * Renovação do processo
+  #--------------------------------------------------------------------------
+  def terminate
+    super
+    @fill.dispose
+    @fill1.dispose
+    @fill2.dispose
+  end
+end
+#==============================================================================
+# ** Window_EquipStatus
+#------------------------------------------------------------------------------
+#  Esta janela exibe as mudanças nos parâmetros do herói na tela de
+# equipamentos.
+#==============================================================================
+
+class Window_EquipStatus < Window_Base
+  #--------------------------------------------------------------------------
+  # * Inicialização do objeto
+  #     x      : coordenada X
+  #     y      : coordenada Y
+  #--------------------------------------------------------------------------
+  def initialize(x, y)
+    super(x, y, window_width, window_height)
+    self.windowskin = Cache.system(MRM.setting[:w])
+    @actor = nil
+    @temp_actor = nil
+    refresh
+  end
+end
+#==============================================================================
+# ** Window_EquipCommand
+#------------------------------------------------------------------------------
+#  Esta janela exibe a lista de comandos para tela de equipamentos
+# (mudança, equipar mais forte, remover tudo).
+#==============================================================================
+
+class Window_EquipCommand < Window_HorzCommand
+  #--------------------------------------------------------------------------
+  # * Inicialização do objeto
+  #     x      : coordenada X
+  #     y      : coordenada Y
+  #     width  : largura
+  #--------------------------------------------------------------------------
+  def initialize(x, y, width)
+    @window_width = width
+    super(x, y)
+    self.windowskin = Cache.system(MRM.setting[:w])
+  end
+end
+#==============================================================================
+# ** Window_EquipSlot
+#------------------------------------------------------------------------------
+#  Esta janela exibe a lista de itens que estão equipados com em um herói.
+#==============================================================================
+
+class Window_EquipSlot < Window_Selectable
+  #--------------------------------------------------------------------------
+  # * Inicialização do objeto
+  #     x      : coordenada X
+  #     y      : coordenada Y
+  #     width  : largura
+  #--------------------------------------------------------------------------
+  def initialize(x, y, width)
+    super(x, y, width, window_height)
+    self.windowskin = Cache.system(MRM.setting[:w])
+    @actor = nil
+    refresh
+  end
+end
+#==============================================================================
+# ** Window_EquipItem
+#------------------------------------------------------------------------------
+#  Esta janela exibe a lista de equipamentos disponíveis para troca na
+# tela de equipamentos.
+#==============================================================================
+
+class Window_EquipItem < Window_ItemList
+  #--------------------------------------------------------------------------
+  # * Inicialização do objeto
+  #     x      : coordenada X
+  #     y      : coordenada Y
+  #     width  : largura
+  #     height : altura
+  #--------------------------------------------------------------------------
+  def initialize(x, y, width, height)
+    super
+    self.windowskin = Cache.system(MRM.setting[:w])
+    @actor = nil
+    @slot_id = 0
+  end
+end
+}
