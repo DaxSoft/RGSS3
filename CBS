@@ -1,0 +1,242 @@
+#==============================================================================
+# • CBS - Card Battle System
+#==============================================================================
+# Autor: Dax (Kvothe)
+# Versão: alpha
+# Site: www.dax-soft.weebly.com
+# Requerimento: Dax Core and Plugin
+#==============================================================================
+# • Descrição:
+#------------------------------------------------------------------------------
+#  CBS desenvolvido para um certo jogo.
+#  Dir 'Cards' at 'Data' to data cards file.
+#  Dir 'Cards' at 'System' to picture cards file.
+#==============================================================================
+# • Versões:
+#------------------------------------------------------------------------------
+# alpha :
+#   - Card Menu
+#   - Card Battle System
+#   - Card Shop
+#   - Card Password
+#==============================================================================
+Dax.register(:cbs, "dax", 0.1) {
+#==============================================================================
+# • Setting Module
+#==============================================================================
+module CBS
+  extend self
+  #----------------------------------------------------------------------------
+  # • Constants
+  #----------------------------------------------------------------------------
+  PASSWORD = {
+    smile:      "011020809",
+  }
+  FILENAMEREGISTER = "Card.rvdata2"
+  #--------------------------------------------------------------------------
+  # • saveRegister
+  #--------------------------------------------------------------------------
+  def saveRegister()
+    File.open(FILENAMEREGISTER, "wb") { |file|
+      export = ->() {
+        content = {}
+        content[:card] = $card
+        content
+      }
+      Marshal.dump(export.call, file)
+    }
+  end
+  #--------------------------------------------------------------------------
+  # • loadRegister
+  #--------------------------------------------------------------------------
+  def loadRegister()
+    return unless FileTest.exist?(FILENAMEREGISTER)
+    File.open(FILENAMEREGISTER, "rb") { |file|
+      import = ->(content) {
+        $card = content[:card] rescue Game_Card.new
+      }
+      import[Marshal.load(file)]
+    }
+  end
+end
+#==============================================================================
+# • Setting Module - Cards
+#==============================================================================
+class CBS::Card
+  #----------------------------------------------------------------------------
+  # • variables
+  #----------------------------------------------------------------------------
+  attr_accessor :name
+  attr_accessor :type
+  attr_accessor :level
+  attr_accessor :atk
+  attr_accessor :def
+  attr_accessor :pv
+  attr_accessor :hp
+  attr_accessor :mp
+  attr_accessor :effect
+  attr_accessor :desc
+  attr_accessor :picture
+  attr_accessor :nature
+  attr_accessor :price
+  attr_accessor :shop
+  attr_accessor :equip
+  #----------------------------------------------------------------------------
+  # • initialize
+  #----------------------------------------------------------------------------
+  def initialize()
+    @name = ""
+    @type = 0
+    @nature = 0
+    @level = 0
+    @atk = 0
+    @def = 0
+    @hp = 0
+    @mp = 0
+    @pv = 0
+    @effect = nil
+    @desc = ""
+    @picture = "" 
+    @price = 0
+    @shop = false
+    @equip = 0
+  end
+  #----------------------------------------------------------------------------
+  # • display all variables
+  #----------------------------------------------------------------------------
+  def display
+    str = "Name is [#{@name}]\n\tType is #{@type}\n\tNature is #{@nature}\n\tLevel is #{@level}\n\tAttack is #{@atk}\n\tDefense is #{@def}\n\tPoint of Life is #{@pv}\n\tHp is #{@hp}\n\tMp is #{@mp}\n\tEffect is #{@effect}\n\tDescription is: #{@desc}"
+    str += "\n\tPrice is #{@price}\n\tAvailable to buy #{@shop}\n\tEquip type is #{@equip}"
+    return str
+  end
+end
+#==============================================================================
+# • Import data files cards
+#==============================================================================
+module CBS::IC
+  extend self
+  #----------------------------------------------------------------------------
+  # • GENERAL
+  #----------------------------------------------------------------------------
+  GEN = ->(tag) { return (/^?(?:#{tag})\:\s*(.*?)\n/im) }
+  UTF_8 = ->(str) { return (str.encoding.to_s == "ASCII-8BIT" ? str.unpack("C*").pack("U*") : str) }
+  RXML = ->(tag) { return (/<(?:#{tag})>(.*?)<\/(?:#{tag})>/im) }
+  GENT = ->(tag) { return (/(?:#{tag})\:\s*(.*?)\n/im) }
+  REFR = ->() { return (/(.*?)\s*\<l\:(.*?)>\s*(?:\<f\:(.*?)>)?/i) }
+  #----------------------------------------------------------------------------
+  # • Main
+  #----------------------------------------------------------------------------
+  def run
+    @entries = Entries.new("#{Dir.pwd}/Data/Cards", "txt")
+    read
+  end
+  #----------------------------------------------------------------------------
+  # • Read
+  #----------------------------------------------------------------------------
+  def read
+    @entries.file.each_with_index { |v, i|
+      file = File.open(v, "rb")
+      str = file.read.to_s
+      name = str.scan(GEN["name|Name|N|n"]).shift.shift.to_s.lstrip
+      name = name.sub!(/\r|\n|\t/, "")
+      symbol = name.symbol
+      card = CBS::Card.new
+      card.name = name
+      card.type = str.scan(GEN["type|Type|T|t"]).shift.shift.to_s.strip.to_i rescue 1
+      card.nature = str.scan(GEN["nature|Nature|N|n"]).shift.shift.to_s.strip.to_i rescue 0
+      card.level = str.scan(GEN["level|Level|l|L"]).shift.shift.to_s.strip.to_i rescue 0
+      card.atk = str.scan(GEN["atk|Atk|a|A"]).shift.shift.to_s.strip.to_i rescue 1
+      card.def = str.scan(GEN["def|Def|d|D"]).shift.shift.to_s.strip.to_i rescue 1
+      card.hp = str.scan(GEN["hp|Hp|h|H"]).shift.shift.to_s.strip.to_i rescue 1
+      card.mp = str.scan(GEN["mp|Mp|m|M"]).shift.shift.to_s.strip.to_i rescue 0
+      card.pv = str.scan(GEN["pv|Pv|p|P"]).shift.shift.to_s.strip.to_i rescue 1
+      card.price = str.scan(GEN["price|Price"]).shift.shift.to_s.strip.to_i rescue 0
+      card.shop = (str.scan(GEN["shop|Shop"]).shift.shift.to_s.strip.to_i rescue 0)
+      card.equip = (str.scan(GEN["equip|Equip"]).shift.shift.to_s.strip.to_i rescue 0)
+      card.effect = str.scan(RXML["effect"]).shift.shift.to_s rescue ""
+      card.picture = name
+      str.gsub(/^\/\*(.*?)\*\//im) { card.desc = UTF_8[$1] rescue "--" }
+      $card.data.merge!({ symbol => card })
+      file.close
+      card = nil
+    }
+  end
+  #----------------------------------------------------------------------------
+  # • Print
+  #----------------------------------------------------------------------------
+  def print
+    log = "=" * 96
+    log += "\n\t • Log print of the setting cards data •\n"
+    log += "=" * 96
+    puts log
+    $card.data.each_value { |i|
+      puts i.display
+    }
+  end
+end
+#==============================================================================
+# • Game_Card
+#==============================================================================
+class Game_Card
+  #----------------------------------------------------------------------------
+  # • attr
+  #----------------------------------------------------------------------------
+  attr_accessor :data
+  attr_accessor :player
+  #----------------------------------------------------------------------------
+  # • init
+  #----------------------------------------------------------------------------
+  def initialize
+    @data = {}
+    @player = []
+  end
+  
+  def load
+    CBS::IC.run
+    CBS::IC.print
+  end
+end
+$card = Game_Card.new
+$card.load
+}
+
+=begin
+** GUIDE **
+#==============================================================================
+• TYPES OF CARDS
+    :human 0
+    :beast 1
+    :magic 2 
+    :equip 3
+    :trap  4 
+    :spell 5
+• NATURES OF CARDS
+    :normal 1
+    :fire 2 
+    :earth 3 
+    :ice 4 
+    :water 5 
+    :thunder 6 
+    :dark 7 
+    :light 8 
+    :wind 9
+• SHOP
+    0 - No available to shop
+    1 - Available to shop
+• EQUIP TYPE
+    0 - non equip
+    1 - sword
+    2 - axe
+    3 - spear
+    4 - arch
+    5 - beast weapon
+    6 - spell weapon
+    6 - all type
+• LEVELS OF CARDS
+    0 - 2 - normal
+    2 - 4 - incomum
+    4 - 6 - rara
+    6 - 8 - lendária
+    9 - divina
+#==============================================================================
+=end
