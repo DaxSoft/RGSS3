@@ -1,7 +1,7 @@
 #* Configuração geral *#
 
 Name: Card Game Battle System
-Version: 0.1
+Version: 0.2
 Size: ~100Kb
 <new>This current version it's in alpha version.</new>
 Website: www.dax-soft.weebly.com
@@ -26,5 +26,6 @@ cbs <l: https://raw.githubusercontent.com/DaxSoft/RGSS3/master/CBS>
 </graphic>
 
 <data>
-
+folder: Cards
+# Smile.txt <l: http://pastebin.com/raw/e4YCt6kT>
 </data>
