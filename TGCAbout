@@ -3,7 +3,9 @@ Esse arquivo deve conter o mesmo nome que a imagem picture da card, que ficará 
 deve conter, com exemplo.
 
 Em 'name', deve ter o mesmo nome que o arquivo da imagem do 'monstro' na pasta Cards, em Graphics. O type e nature, você pode olhar 
-no fim do script
+no fim do script.
+
+A picture do card, não deve ultrapassar 160x171
 
 name: Slime
 Type: 1
