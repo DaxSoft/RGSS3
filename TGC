@@ -191,6 +191,27 @@ module CBS
     "" => "This card don't have any effect",
     
   }
+  # Rank's list
+  RANK = ->(value) {
+    case value
+    when 0..10 then "F"
+    when 11..20 then "D"
+    when 21..30 then "C"
+    when 31..50 then "B"
+    when 51..70 then "A"
+    when 71..100 then "S"
+    when 101..500 then "SS"
+    when 501..999 then "SSS"
+    when value >= 1000 then "Left this game and go search a work, dude!"
+    else
+      "You are a loser, dude!"
+    end
+  }
+  # Drop card
+  DROP = {
+    "random" => %q(return ($gameCard.enemy[:deck].shuffle)),
+    "" => %q(return ($gameCard.enemy[:deck].shuffle)),
+  }
   #--------------------------------------------------------------------------
   # • saveRegister
   #--------------------------------------------------------------------------
@@ -240,6 +261,7 @@ class CBS::Card
   attr_accessor :price # price on the shop
   attr_accessor :shop # available to sell?
   attr_accessor :condition # condition to into to the game
+  attr_accessor :id # id card
   #----------------------------------------------------------------------------
   # • initialize
   #----------------------------------------------------------------------------
@@ -260,6 +282,7 @@ class CBS::Card
     @price = 0
     @shop = false
     @condition = nil
+    @id = 0
   end
   #----------------------------------------------------------------------------
   # • display all variables
@@ -267,7 +290,7 @@ class CBS::Card
   def display
     str = "Name is [#{@name}]\n\tType is #{@type}\n\tNature is #{@nature}\n\tLevel is #{@level}\n\tAttack is #{@atk}\n\tDefense is #{@def}\n\tPoint of Life is #{@pv}\n\tHp is #{@hp}\n\tMp is #{@mp}\n\tEffect is #{@effect}\n\tDescription is: #{@desc}"
     str += "\n\tPrice is #{@price}\n\tAvailable to buy #{@shop}"
-    str += "\n\tCondition is #{@condition}\n\tCredit to #{@credit}"
+    str += "\n\tCondition is #{@condition}\n\tCredit to #{@credit}\n\tID is #{@id}"
     return str
   end
 end
@@ -294,6 +317,23 @@ class CBS::Sprite_Card < Sprite
     self.bitmap.blt(5, 28, Cache.card(@name), @rectPicture)
     @baseCard.dispose
     icon.dispose
+  end
+  
+  def dispose
+    super
+    self.bitmap.clear
+  end
+end
+#==============================================================================
+# • Setting Module - Icon Sprite Card
+#==============================================================================
+class CBS::Sprite_IconCard < Sprite
+  def initialize(card, w=24, h=32)
+    super([w, h])
+    #stretch_blt(dest_rect, src_bitmap, src_rect[, opacity]) 
+    scard = CBS::Sprite_Card.new(card)
+    self.bitmap.stretch_blt(self.rect, scard.bitmap, scard.rect)
+    scard.dispose
   end
   
   def dispose
@@ -353,6 +393,7 @@ module CBS::IC
       card.effect = str.scan(GEN["Effect|effect"]).shift.shift.to_s.strip rescue ""
       card.condition = str.scan(GEN["Condition|condition"]).shift.shift.to_s.strip rescue ""
       card.picture = name
+      card.id = ((1+i) * 10e2).to_i
       $gameCard.data.merge!({ symbol => card })
       file.close
       card = nil
@@ -381,7 +422,8 @@ class CBS::Data
   attr_accessor :data
   attr_accessor :player
   attr_accessor :currentView # current index menu
-  attr_accessor :deck
+  attr_accessor :enemy
+  attr_accessor :deck # get the card's list
   #----------------------------------------------------------------------------
   # • init
   #----------------------------------------------------------------------------
@@ -389,8 +431,29 @@ class CBS::Data
     @data = {}
     @player = {
       card: [],
+      deck: [],
+      win: 0,
+      lose: 0
+      
+    }
+    @deck = [] # list to menu
+    @enemy = {
+      deck: []
     }
     @currentView = 0
+  end
+  #----------------------------------------------------------------------------
+  # • access
+  #----------------------------------------------------------------------------
+  def pcard; return (@player[:card]); end;
+  def pdeck; return (@player[:deck]); end;
+  def deck; return (@deck); end;
+  def edeck; return (@enemy[:deck]); end;
+  #----------------------------------------------------------------------------
+  # • player's rank
+  #----------------------------------------------------------------------------
+  def rank
+    return CBS::RANK[@player[:win] - @player[:lose]]
   end
   #----------------------------------------------------------------------------
   # • load
@@ -420,25 +483,77 @@ class CBS::Data
     x.price = @data[name].price
     x.shop = @data[name].shop
     x.condition = @data[name].condition
+    x.id = @data[name].id
+    z = pcard.select { |i| i.name == x.name }.size rescue 0
+    x.id += z 
     return x
   end
   #----------------------------------------------------------------------------
   # • get card
   #----------------------------------------------------------------------------
   def getCard(name)
+    name = name.symbol if name.is_a?(String)
     @player[:card] << createCard(name)
   end
   #----------------------------------------------------------------------------
   # • loseCard
   #----------------------------------------------------------------------------
   def loseCard(name)
+    name = name.symbol if name.is_a?(String)
     return if @player[:card].if { |i| i.name == @data[name].name }.empty?
     x = @player[:card].select { |i| i.name == @data[name].name }.shift
     @player[:card].delete(x)
   end
+  #----------------------------------------------------------------------------
+  # • updateDeck list
+  #----------------------------------------------------------------------------
+  def updateDeckList
+    @deck = @player[:card].select { |i| i.name != pdeck[i.name.symbol].name } 
+  end
+  #----------------------------------------------------------------------------
+  # • lose list deck card
+  #----------------------------------------------------------------------------
+  def loseDeckCard(name)
+    name = name.symbol if name.is_a?(String)
+    return if deck.if { |i| i.name == pcard[name].name }.empty?
+    x = deck.select { |i| i.name == pcard[name].name }.shift
+    @deck.delete(x)
+  end
+  #----------------------------------------------------------------------------
+  # • put card on deck
+  #----------------------------------------------------------------------------
+  def putDeck(name)
+    name = name.symbol if name.is_a?(String)
+    pdeck << createCard(name)
+    loseDeckCard(name)
+  end
+  #----------------------------------------------------------------------------
+  # • remove card on deck
+  #----------------------------------------------------------------------------
+  def removeDeck(name)
+    name = name.symbol if name.is_a?(String)
+    return if pdeck.if { |i| i.name == pcard[name].name }.empty?
+    x = pdeck.select { |i| i.name == pcard[name].name }.shift
+    pdeck.delete(x)
+  end
 end
 $gameCard = CBS::Data.new
 $gameCard.load
+#==============================================================================
+# • Duel
+#==============================================================================
+class CBS::Duel
+  attr_accessor :pPV
+  attr_accessor :ePV
+  attr_accessor :mPv # limit pv 
+  attr_accessor :time # per minute
+  def initialize(mPv=20, time=4)
+    @pPV = mPv
+    @ePv = mPv
+    @mPv = mPv
+    @time = time * 60
+  end
+end
 #==============================================================================
 # • Shortcut
 #==============================================================================
@@ -500,29 +615,6 @@ class ToDeck < Window_Command
     [:a, :b, :c].each_with_index { |k,i| add_command(CBS::TEXT[:DECK][i], k)}
   end
 end
-#==============================================================================
-# • Scene_Map.
-#==============================================================================
-class Scene_Map < Scene_Base
-  #----------------------------------------------------------------------------
-  # • Processo principal.
-  #----------------------------------------------------------------------------
-  alias :shortcut_menu_main :main
-  def main
-    @shortcut_menu = CBS::Shortcut.new
-    shortcut_menu_main
-    @shortcut_menu.dispose
-  end
-  #----------------------------------------------------------------------------
-  # • Atualização dos objetos.
-  #----------------------------------------------------------------------------
-  alias :shortcut_menu_update :update
-  def update
-    shortcut_menu_update
-    @shortcut_menu.update
-  end
-end
-
 #==============================================================================
 # • WView
 #==============================================================================
@@ -648,6 +740,40 @@ class Scene_View < Scene_MenuBase
     SceneManager.call(Scene_ViewCard)
   end
 end
+#==============================================================================
+# • Scene_Map.
+#==============================================================================
+class Scene_Map < Scene_Base
+  #----------------------------------------------------------------------------
+  # • Processo principal.
+  #----------------------------------------------------------------------------
+  alias :shortcut_menu_main :main
+  def main
+    @shortcut_menu = CBS::Shortcut.new
+    shortcut_menu_main
+    @shortcut_menu.dispose
+  end
+  #----------------------------------------------------------------------------
+  # • Atualização dos objetos.
+  #----------------------------------------------------------------------------
+  alias :shortcut_menu_update :update
+  def update
+    shortcut_menu_update
+    @shortcut_menu.update
+  end
+  #--------------------------------------------------------------------------
+  # * Atualização da chamada do menu quando pressionada tecla
+  #--------------------------------------------------------------------------
+  def update_call_menu
+    if $game_system.menu_disabled || $game_map.interpreter.running?
+      @menu_calling = false
+    else
+      @menu_calling ||= (Input.trigger?(:B) || trigger?(0x02))
+      call_menu if @menu_calling && !$game_player.moving?
+    end
+  end
+end
+
 =begin
 ** GUIDE **
 #==============================================================================
@@ -677,6 +803,30 @@ end
     4 - 6 - rara
     6 - 8 - lendária
     9 - divina
+#==============================================================================
+name: Slime
+Type: 1
+nature: 0
+level: 0
+atk: 2
+def: 1
+pv: 1
+hp: 10
+mp: 0
+shop: 1
+price: 50
+equip: 0
+Credit: http://castleage.wikia.com/wiki/
+Desc: Sample beast
+Condition: pv1
+Effect: 
+#==============================================================================
+Name: Teste
+Rank: F
+Reward: 10
+Drop: random
+Made: (standard if isn't defined)
+Deck: Slime, Slime, Slime, Slime, Bat, Bat, Bat
 #==============================================================================
 =end
 }
