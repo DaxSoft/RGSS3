@@ -1,0 +1,23 @@
+Para criar cartas é simples, você precisa de: Ir à pasta Cards, dentro da pasta Data e criar um arquivo. 
+Esse arquivo deve conter o mesmo nome que a imagem picture da card, que ficará na pasta Graphics/Cards. Veja abaixo o que o arquivo
+deve conter, com exemplo.
+
+Em 'name', deve ter o mesmo nome que o arquivo da imagem do 'monstro' na pasta Cards, em Graphics. O type e nature, você pode olhar 
+no fim do script
+
+name: Slime
+Type: 1
+nature: 0
+level: 0
+atk: 2
+def: 1
+pv: 1
+hp: 10
+mp: 0
+shop: 1
+price: 50
+equip: 0
+Credit: http://castleage.wikia.com/wiki/
+Desc: Sample beast
+Condition: pv1
+Effect: 
