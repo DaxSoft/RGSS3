@@ -1,0 +1,682 @@
+#==============================================================================
+# • CBS - Card Battle System
+#==============================================================================
+# Autor: Dax (Kvothe)
+# Versão: alpha
+# Site: www.dax-soft.weebly.com
+# Requerimento: Dax Core and Plugin
+#==============================================================================
+# • Descrição:
+#------------------------------------------------------------------------------
+#  CBS desenvolvido para um certo jogo.
+#  Dir 'Cards' at 'Data' to data cards file.
+#  Dir 'Cards' at 'System' to picture cards file.
+#==============================================================================
+# • Versões:
+#------------------------------------------------------------------------------
+# alpha :
+#   - Card Menu
+#   - Card Battle System
+#   - Card Shop
+#   - Card Password
+#==============================================================================
+Dax.register(:cbs, "dax", 0.1) {
+["#{Dir.pwd}/Data/Cards", "#{Dir.pwd}/Graphics/Cards", 
+"#{Dir.pwd}/Cards", "#{Dir.pwd}/Cards/Picture"].each { |_dir|
+  Dir.mkdir(_dir) unless FileTest.directory?(_dir)
+}
+#==============================================================================
+# • Cache
+#==============================================================================
+class << Cache
+  def card(filename)
+    if FileTest.exist?("#{Dir.pwd}/Graphics/Cards/#{filename}")
+      load_bitmap("#{Dir.pwd}/Cards/Picture/", filename)
+    else
+      load_bitmap("Graphics/Cards/", filename)
+    end
+  end
+end
+#==============================================================================
+# •Scene_Deck
+#==============================================================================
+class Scene_Deck < Scene_MenuBase
+  #----------------------------------------------------------------------------
+  # • Inicialização dos objetos.
+  #----------------------------------------------------------------------------
+  def start
+    super
+    @menu = ToDeck.new
+    [:a, :b, :c].each { |key| @menu.set_handler(key, method(key))}
+  end
+  #----------------------------------------------------------------------------
+  # • Renovação dos objetos.
+  #----------------------------------------------------------------------------
+  def terminate
+    super
+    @menu.dispose
+  end
+  
+  def update
+    super
+    trigger?(0x02) { a }
+  end
+  #----------------------------------------------------------------------------
+  # • Retornar.
+  #----------------------------------------------------------------------------
+  def a
+    return_scene
+  end
+  #--------------------------------------------------------------------------
+  # • Comando [Para o Título]
+  #--------------------------------------------------------------------------
+  def b
+    SceneManager.call(Scene_View)
+  end
+  #--------------------------------------------------------------------------
+  # • Comando [Sair]
+  #--------------------------------------------------------------------------
+  def c
+  end
+end
+#==============================================================================
+# • Setting Module
+#==============================================================================
+module CBS
+  extend self
+  #----------------------------------------------------------------------------
+  # • Constants
+  #----------------------------------------------------------------------------
+  # Password to get cards at scene passord menu
+  PASSWORD = {
+    smile:      "011020809",
+  }
+  # filename of the register file
+  FILENAMEREGISTER = "Card.rvdata2"
+  # all text string cbs
+  TEXT = {
+    VIEWCARD: "Press middle mouse button to see the description and right button to left here",
+    # Action menu
+    ACTION: [
+      "Attack",
+      "Defense",
+      "Skill", 
+      "Item",
+      "Turn off",
+      "Set"
+    ],
+    # phrases menu
+    STR: [
+      "Attack the %s with %s",
+      "Using skill on the %s",
+      "Using the item %s on the %s",
+      "Defense mode",
+      "You lose %02d point of life",
+      "You recoverd %02d point of life",
+      "The card %s lose %02d hp",
+      "The card %s lose %02d mp",
+      "Are you have %02d cards in your deck",
+      "DP: %03d",
+      "Click with middle mouse button to view the information about it",
+    ],
+    # To Deck Scene
+    DECK: [
+      "Resume",
+      "View Cards",
+      "Organize Deck",
+    ],
+    # SINFO
+    SINFO: [
+      "Type:",
+      "Nature:",
+      "Level:",
+      "PV:",
+      "HP:",
+      "MP:",
+      "ATK:",
+      "DEF:",
+      "Price:",
+      "Credit:",
+      "Condition to be summon:",
+      "Effect of this card:",
+    ],
+    
+  }
+  TYPE = "human,monster,magic,equip,trap,spell".split(",")
+  # natures ofc ard
+  NATURE = ["normal",
+    "fire",
+    "earh",
+    "ice",
+    "water",
+    "thunder",
+    "dark",
+    "light",
+    "wind"
+  ]
+  # level of card
+  LEVEL = ->(id) {
+    case id
+    when 0..2 then ["normal", 127]
+    when 3..4 then ["uncommon", 126]
+    when 5..6 then ["rare", 125]
+    when 7..9 then ["legendary", 495]
+    end
+  }
+  # Open Menu
+  OPENMENU = {
+  # Configurar os ícones e as cenas em que eles irão abrir.
+     icons: [
+      # [ID do ícone, Cena que irá abrir],
+      [228, Scene_Deck], #deck
+      [226, Scene_Item], #states
+      [125, Scene_Item], #rank 
+     ],
+  }
+  # CONDITION text. You can use two skip line in condition '\n'
+  CONDITION = {
+    "" => "This card don't have any condition",
+    "pv1" => "Requires that you lose 1 point of life",
+    "pv2" => "Requires that you lose 2 point of life",
+    "pv3" => "Requires that you lose 3 point of life",
+    "pv4" => "Requires that you lose 4 point of life",
+    "pv5" => "Requires that you lose 5 point of life",
+    "pv6" => "Requires that you lose 6 point of life",
+    "pv7" => "Requires that you lose 7 point of life",
+    "pv8" => "Requires that you lose 8 point of life",
+    "pv9" => "Requires that you lose 9 point of life",
+  }
+  # EFFECT text You can use two skip line in effect'\n'
+  EFFECT = {
+    "" => "This card don't have any effect",
+    
+  }
+  #--------------------------------------------------------------------------
+  # • saveRegister
+  #--------------------------------------------------------------------------
+  def saveRegister()
+    File.open(FILENAMEREGISTER, "wb") { |file|
+      export = ->() {
+        content = {}
+        content[:card] = $gameCard
+        content
+      }
+      Marshal.dump(export.call, file)
+    }
+  end
+  #--------------------------------------------------------------------------
+  # • loadRegister
+  #--------------------------------------------------------------------------
+  def loadRegister()
+    return unless FileTest.exist?(FILENAMEREGISTER)
+    File.open(FILENAMEREGISTER, "rb") { |file|
+      import = ->(content) {
+        $gameCard = content[:card] rescue CBS::Data.new
+      }
+      import[Marshal.load(file)]
+    }
+  end
+end
+#==============================================================================
+# • Setting Module - Cards
+#==============================================================================
+class CBS::Card
+  #----------------------------------------------------------------------------
+  # • variables
+  #----------------------------------------------------------------------------
+  attr_accessor :name # name of the card
+  attr_accessor :type # type of the card
+  attr_accessor :credit # credit author
+  attr_accessor :level # level
+  attr_accessor :atk # attack point
+  attr_accessor :def # defense point
+  attr_accessor :pv # point of life or damage that cause
+  attr_accessor :hp # point of life from card
+  attr_accessor :mp # point of mana from card
+  attr_accessor :effect # effect from card
+  attr_accessor :desc # description
+  attr_accessor :picture # your picture
+  attr_accessor :nature # nature from card or element
+  attr_accessor :price # price on the shop
+  attr_accessor :shop # available to sell?
+  attr_accessor :condition # condition to into to the game
+  #----------------------------------------------------------------------------
+  # • initialize
+  #----------------------------------------------------------------------------
+  def initialize()
+    @name = ""
+    @credit = ""
+    @type = 1
+    @nature = 0
+    @level = 0
+    @atk = 0
+    @def = 0
+    @hp = 0
+    @mp = 0
+    @pv = 0
+    @effect = nil
+    @desc = ""
+    @picture = "" 
+    @price = 0
+    @shop = false
+    @condition = nil
+  end
+  #----------------------------------------------------------------------------
+  # • display all variables
+  #----------------------------------------------------------------------------
+  def display
+    str = "Name is [#{@name}]\n\tType is #{@type}\n\tNature is #{@nature}\n\tLevel is #{@level}\n\tAttack is #{@atk}\n\tDefense is #{@def}\n\tPoint of Life is #{@pv}\n\tHp is #{@hp}\n\tMp is #{@mp}\n\tEffect is #{@effect}\n\tDescription is: #{@desc}"
+    str += "\n\tPrice is #{@price}\n\tAvailable to buy #{@shop}"
+    str += "\n\tCondition is #{@condition}\n\tCredit to #{@credit}"
+    return str
+  end
+end
+#==============================================================================
+# • Setting Module - Sprite Card
+#==============================================================================
+class CBS::Sprite_Card < Sprite
+  def initialize(card)
+    super([170, 227])
+    @name, @type, @level = card.name, card.type, card.level
+    @rectPicture = Rect.new(0, 0, 160, 171)
+    @rectName = Rect.new(5, 9, 160, 18)
+    @rectNature = Rect.new(10, 203, 160, 18)
+    @baseCard = Cache.system(CBS::TYPE[@type])
+    self.bitmap.blt(0, 0, @baseCard, @baseCard.rect)
+    self.bitmap.font.size = 12
+    self.bitmap.font.name = "Verdana"
+    #self.bitmap.font.outline = false
+    self.bitmap.draw_text(@rectName, @name, 1)
+    #self.bitmap.draw_text(@rectNature, CBS::LEVEL[level], 1)
+    icon = Bitmap.new(24,24)
+    icon.draw_icon(CBS::LEVEL[@level][1],0,0)
+    self.bitmap.blt(75,200,icon,Rect.new(0,0,24,24))
+    self.bitmap.blt(5, 28, Cache.card(@name), @rectPicture)
+    @baseCard.dispose
+    icon.dispose
+  end
+  
+  def dispose
+    super
+    self.bitmap.clear
+  end
+end
+#==============================================================================
+# • Import data files cards
+#==============================================================================
+module CBS::IC
+  extend self
+  #----------------------------------------------------------------------------
+  # • GENERAL
+  #----------------------------------------------------------------------------
+  GEN = ->(tag) { return (/^?(?:#{tag})\:\s*(.*?)\n/im) }
+  UTF_8 = ->(str) { return (str.encoding.to_s == "ASCII-8BIT" ? str.unpack("C*").pack("U*") : str) }
+  RXML = ->(tag) { return (/<(?:#{tag})>(.*?)<\/(?:#{tag})>/im) }
+  GENT = ->(tag) { return (/(?:#{tag})\:\s*(.*?)\n/im) }
+  REFR = ->() { return (/(.*?)\s*\<l\:(.*?)>\s*(?:\<f\:(.*?)>)?/i) }
+  #----------------------------------------------------------------------------
+  # • Main
+  #----------------------------------------------------------------------------
+  def run
+    if $TEST
+      @entries = Entries.new("#{Dir.pwd}/Data/Cards", "txt")
+      read
+      CBS.saveRegister
+    else
+      CBS.loadRegister
+    end
+  end
+  #----------------------------------------------------------------------------
+  # • Read
+  #----------------------------------------------------------------------------
+  def read
+    @entries.file.each_with_index { |v, i|
+      file = File.open(v, "rb")
+      str = file.read.to_s
+      name = str.scan(GEN["name|Name|N|n"]).shift.shift.to_s.lstrip rescue "Untitled"
+      name = name.sub!(/\r|\n|\t/, "")
+      symbol = name.symbol
+      card = CBS::Card.new
+      card.name = name
+      card.type = str.scan(GEN["Type|type|T|t"]).shift.shift.to_s.strip.to_i rescue 1
+      card.desc = str.scan(GEN["Desc|desc"]).shift.shift.to_s.strip rescue "--"
+      card.credit = str.scan(GEN["Credit|credit|C|c|Author|author"]).shift.shift.to_s.strip rescue "unknow"
+      card.nature = str.scan(GEN["Nature|nature|N|n"]).shift.shift.to_s.strip.to_i rescue 0
+      card.level = str.scan(GEN["level|Level|l|L"]).shift.shift.to_s.strip.to_i rescue 0
+      card.atk = str.scan(GEN["Atk|atk|a|A"]).shift.shift.to_s.strip.to_i rescue 1
+      card.def = str.scan(GEN["Def|def|d|D"]).shift.shift.to_s.strip.to_i rescue 1
+      card.hp = str.scan(GEN["Hp|hp|h|H"]).shift.shift.to_s.strip.to_i rescue 1
+      card.mp = str.scan(GEN["Mp|mp|m|M"]).shift.shift.to_s.strip.to_i rescue 0
+      card.pv = str.scan(GEN["Pv|pv|p|P"]).shift.shift.to_s.strip.to_i rescue 1
+      card.price = str.scan(GEN["price|Price"]).shift.shift.to_s.strip.to_i rescue 0
+      card.shop = (str.scan(GEN["shop|Shop"]).shift.shift.to_s.strip.to_i rescue 0)
+      card.effect = str.scan(GEN["Effect|effect"]).shift.shift.to_s.strip rescue ""
+      card.condition = str.scan(GEN["Condition|condition"]).shift.shift.to_s.strip rescue ""
+      card.picture = name
+      $gameCard.data.merge!({ symbol => card })
+      file.close
+      card = nil
+    }
+  end
+  #----------------------------------------------------------------------------
+  # • Print
+  #----------------------------------------------------------------------------
+  def print
+    log = "=" * 96
+    log += "\n\t • Log print of the setting cards data •\n"
+    log += "=" * 96
+    puts log
+    $gameCard.data.each_value { |i|
+      puts i.display
+    }
+  end
+end
+#==============================================================================
+# • Game_Card
+#==============================================================================
+class CBS::Data
+  #----------------------------------------------------------------------------
+  # • attr
+  #----------------------------------------------------------------------------
+  attr_accessor :data
+  attr_accessor :player
+  attr_accessor :currentView # current index menu
+  attr_accessor :deck
+  #----------------------------------------------------------------------------
+  # • init
+  #----------------------------------------------------------------------------
+  def initialize
+    @data = {}
+    @player = {
+      card: [],
+    }
+    @currentView = 0
+  end
+  #----------------------------------------------------------------------------
+  # • load
+  #----------------------------------------------------------------------------
+  def load
+    CBS::IC.run
+    CBS::IC.print if $TEST
+  end
+  #----------------------------------------------------------------------------
+  # • createCard
+  #----------------------------------------------------------------------------
+  def createCard(name)
+    x = CBS::Card.new
+    x.name = @data[name].name
+    x.credit = @data[name].credit
+    x.type = @data[name].type
+    x.level = @data[name].level
+    x.atk =@data[name].atk
+    x.def = @data[name].def
+    x.pv =@data[name].pv
+    x.hp = @data[name].hp
+    x.mp = @data[name].mp
+    x.effect = @data[name].effect
+    x.desc = @data[name].desc
+    x.picture = @data[name].picture
+    x.nature = @data[name].nature
+    x.price = @data[name].price
+    x.shop = @data[name].shop
+    x.condition = @data[name].condition
+    return x
+  end
+  #----------------------------------------------------------------------------
+  # • get card
+  #----------------------------------------------------------------------------
+  def getCard(name)
+    @player[:card] << createCard(name)
+  end
+  #----------------------------------------------------------------------------
+  # • loseCard
+  #----------------------------------------------------------------------------
+  def loseCard(name)
+    return if @player[:card].if { |i| i.name == @data[name].name }.empty?
+    x = @player[:card].select { |i| i.name == @data[name].name }.shift
+    @player[:card].delete(x)
+  end
+end
+$gameCard = CBS::Data.new
+$gameCard.load
+#==============================================================================
+# • Shortcut
+#==============================================================================
+class CBS::Shortcut
+  #----------------------------------------------------------------------------
+  # • Inicialização dos objetos.
+  #----------------------------------------------------------------------------
+  def initialize
+    @icon = []
+    CBS::OPENMENU[:icons].each_with_index { |key, index|
+     @icon[index] = Sprite.new([24,24])
+     @icon[index].bitmap.draw_icon(key[0],0,0)
+     @icon[index].opacity = 128
+     @icon[index].x = 4 + (28 * index)
+     @icon[index].y += 4
+    }
+  end
+  #----------------------------------------------------------------------------
+  # • Renovação dos objetos.
+  #----------------------------------------------------------------------------
+  def dispose
+    @icon.each(&:dispose)
+  end
+  #----------------------------------------------------------------------------
+  # • Atualização dos objetos.
+  #----------------------------------------------------------------------------
+  def update
+    @icon.each(&:update)
+    @icon.each_with_index { |icon, index| icon.if_mouse_over { |over| icon.opacity = over ? 255 : 128
+     icon.if_mouse_click { 
+      SceneManager.call(CBS::OPENMENU[:icons][index][1]) rescue nil
+      #SceneManager.symbol(CBS::OPENMENU[:icons][index][1])
+    }}}
+  end
+end
+#==============================================================================
+# • ToDeck
+#==============================================================================
+class ToDeck < Window_Command
+  #----------------------------------------------------------------------------
+  # • Inicialização dos objetos.
+  #----------------------------------------------------------------------------
+  def initialize
+    super(0, 0)
+    self.x = (Graphics.width - self.width) / 2
+    self.y = (Graphics.height - self.height) / 2
+    self.openness = 255
+  end
+  #----------------------------------------------------------------------------
+  # • Aquisição da largura da janela
+  #----------------------------------------------------------------------------
+  def window_width
+    return 160
+  end
+  #----------------------------------------------------------------------------
+  # • Criação da lista de comandos
+  #----------------------------------------------------------------------------
+  def make_command_list
+    [:a, :b, :c].each_with_index { |k,i| add_command(CBS::TEXT[:DECK][i], k)}
+  end
+end
+#==============================================================================
+# • Scene_Map.
+#==============================================================================
+class Scene_Map < Scene_Base
+  #----------------------------------------------------------------------------
+  # • Processo principal.
+  #----------------------------------------------------------------------------
+  alias :shortcut_menu_main :main
+  def main
+    @shortcut_menu = CBS::Shortcut.new
+    shortcut_menu_main
+    @shortcut_menu.dispose
+  end
+  #----------------------------------------------------------------------------
+  # • Atualização dos objetos.
+  #----------------------------------------------------------------------------
+  alias :shortcut_menu_update :update
+  def update
+    shortcut_menu_update
+    @shortcut_menu.update
+  end
+end
+
+#==============================================================================
+# • WView
+#==============================================================================
+class WView < Window_Command
+  #----------------------------------------------------------------------------
+  # • Inicialização dos objetos.
+  #----------------------------------------------------------------------------
+  def initialize
+    super(0, 0)
+    self.openness = 255
+  end
+  #----------------------------------------------------------------------------
+  # • Aquisição da largura da janela
+  #----------------------------------------------------------------------------
+  def window_width
+    return 544
+  end
+  
+  def window_height
+    return 416-48
+  end
+  #----------------------------------------------------------------------------
+  # • Criação da lista de comandos
+  #----------------------------------------------------------------------------
+  def make_command_list
+    $gameCard.player[:card].each_with_index { |value, n|
+      add_command(value.name, value.name.symbol)
+    }
+  end
+end
+#==============================================================================
+# • WView
+#==============================================================================
+class Scene_ViewCard < Scene_MenuBase
+  #----------------------------------------------------------------------------
+  # • Inicialização dos objetos.
+  #----------------------------------------------------------------------------
+  def start
+    return if $gameCard.currentView.nil?
+    super
+    @data = $gameCard.currentView
+    @card = CBS::Sprite_Card.new(@data)
+    @card.x = @card.y = 4
+    @sinfo = Sprite.new([544,416-32])
+    @sinfo.y = 10
+    setsinfo
+    @help = Sprite_Text.new(0, 0, 544, 24, CBS::TEXT[:VIEWCARD],1)
+    @help.position(:center_down)
+  end
+  
+  def setsinfo
+    @sinfo.bitmap.clear
+    @sinfo.bitmap.draw_text(182, 8, @sinfo.width, 20, CBS::TEXT[:SINFO][0] + " #{CBS::TYPE[@data.type]}")
+    @sinfo.bitmap.draw_text(182, 28, @sinfo.width, 20, CBS::TEXT[:SINFO][1] + " #{CBS::NATURE[@data.nature]}")
+    @sinfo.bitmap.draw_text(182, 48, @sinfo.width, 20, CBS::TEXT[:SINFO][2] + " #{CBS::LEVEL[@data.level][0]}")
+    @sinfo.bitmap.draw_text(182, 68, @sinfo.width, 20, CBS::TEXT[:SINFO][3] + " #{@data.pv}")
+    @sinfo.bitmap.draw_text(182, 88, @sinfo.width, 20, CBS::TEXT[:SINFO][4] + " #{@data.hp}")
+    @sinfo.bitmap.draw_text(182, 108, @sinfo.width, 20, CBS::TEXT[:SINFO][5] + " #{@data.mp}")
+    @sinfo.bitmap.draw_text(182, 128, @sinfo.width, 20, CBS::TEXT[:SINFO][6] + " #{@data.atk}")
+    @sinfo.bitmap.draw_text(182, 148, @sinfo.width, 20, CBS::TEXT[:SINFO][7] + " #{@data.def}")
+    @sinfo.bitmap.draw_text(182, 168, @sinfo.width, 20, CBS::TEXT[:SINFO][8] + " #{@data.price}")
+    @sinfo.bitmap.draw_text(182, 188, @sinfo.width, 20, CBS::TEXT[:SINFO][9] + " #{@data.credit}")
+    condition = CBS::CONDITION[@data.condition].split(/\n/)
+    @sinfo.bitmap.draw_text(4, 228, @sinfo.width, 20, CBS::TEXT[:SINFO][10] + " #{condition[0]}")
+    @sinfo.bitmap.draw_text(4, 248, @sinfo.width, 20, "#{condition[1] rescue ""}") 
+    @sinfo.bitmap.draw_text(4, 268, @sinfo.width, 20, "#{condition[2] rescue ""}") 
+    effect = CBS::EFFECT[@data.effect].split(/\n/)
+    @sinfo.bitmap.draw_text(4, 288, @sinfo.width, 20, CBS::TEXT[:SINFO][11] + " #{effect[0]}")
+    @sinfo.bitmap.draw_text(4, 308, @sinfo.width, 20, "#{effect[1] rescue ""}") 
+    @sinfo.bitmap.draw_text(4, 328, @sinfo.width, 20, "#{effect[2] rescue ""}") 
+    
+  end
+  #----------------------------------------------------------------------------
+  # • Renovação dos objetos.
+  #----------------------------------------------------------------------------
+  def terminate
+    return if $gameCard.currentView.nil?
+    super
+    [@card, @sinfo, @help].each(&:dispose)
+  end
+  
+  def update
+    return if $gameCard.currentView.nil?
+    super
+    trigger?(0x02) { return_scene } 
+    trigger?(0x04) { msgbox(@data.desc) }
+  end
+end
+#==============================================================================
+# • View
+#==============================================================================
+class Scene_View < Scene_MenuBase
+  #----------------------------------------------------------------------------
+  # • Inicialização dos objetos.
+  #----------------------------------------------------------------------------
+  def start
+    super
+    @menu = WView.new
+    @help = Window_Help.new(1)
+    @help.position(:center_down)
+    @help.set_text(CBS::TEXT[:STR][10])
+    @info = false
+  end
+  #----------------------------------------------------------------------------
+  # • Renovação dos objetos.
+  #----------------------------------------------------------------------------
+  def terminate
+    super
+    @menu.dispose
+  end
+  
+  def update
+    super
+    trigger?(0x04) { ok } unless @info
+    trigger?(0x02) { return_scene } 
+  end
+  
+  def ok
+    puts "working"
+    puts @menu.current_data
+    return if $gameCard.player[:card].empty?
+    $gameCard.currentView = $gameCard.data[@menu.current_data[:symbol]] rescue SceneManager.call(Scene_View)
+    SceneManager.call(Scene_ViewCard)
+  end
+end
+=begin
+** GUIDE **
+#==============================================================================
+• TYPES OF CARDS
+    :human 0
+    :beast 1
+    :magic 2 
+    :equip 3
+    :trap  4 
+    :spell 5
+• NATURES OF CARDS
+    :normal 0
+    :fire 1 
+    :earth 2 
+    :ice 3 
+    :water 4 
+    :thunder 5 
+    :dark 6 
+    :light 7 
+    :wind 8
+• SHOP
+    0 - No available to shop
+    1 - Available to shop
+• LEVELS OF CARDS
+    0 - 2 - normal
+    2 - 4 - incomum
+    4 - 6 - rara
+    6 - 8 - lendária
+    9 - divina
+#==============================================================================
+=end
+}
