@@ -6,7 +6,7 @@
 #     Gab!(Método de registrar scripts)
 #     Gotoken : Módulo de Benchmark.
 #     Module PNG&RTP : Autor desconhecido.
-# Versão : Core i8.5
+# Versão : Core i8.61
 # Site : www.dax-soft.weebly.com
 # Suporte : dax-soft@live.com
 #==============================================================================
@@ -706,7 +706,7 @@ module API
   # • [Handle]/Dll : Retorna ao Handle da janela.
   #----------------------------------------------------------------------------
   def hWND(game_title=nil)
-    return API::FindWindow.call('RGSS Player', game_title || load_data("./Data/System.rvdata2").game_title.to_s)
+    return API::FindWindow.call('RGSS Player', game_title || load_data("Data/System.rvdata2").game_title.to_s) rescue nil
   end
   #----------------------------------------------------------------------------
   # • [Handle]/Dll : Retorna ao Handle da janela. Método protegido.
@@ -903,7 +903,7 @@ module API
   #----------------------------------------------------------------------------
   # • [ShellExecute] : 
   #----------------------------------------------------------------------------
-  Shellxecute = long("ShellExecute", [:LPCTSTR, :LPCTSTR, :LPCTSTR,
+  ShellExecute = long("ShellExecute", [:LPCTSTR, :LPCTSTR, :LPCTSTR,
                                       :LPCTSTR, :LPCTSTR, :LONG], "Shell32.dll")
   #----------------------------------------------------------------------------
   # • [Método protegido] : Método usado para chamar a função LoadLibrary.
@@ -3156,7 +3156,7 @@ Mouse.start
 #==============================================================================
 # • Powershell
 #==============================================================================
-Dax.register(:powershell, "dax", 1.0) {
+Dax.register(:powershell, "dax", 2.0) {
 module Powershell
   extend self
   #----------------------------------------------------------------------------
@@ -3177,6 +3177,10 @@ module Powershell
   def wget(link, output, ext="-v")
     cmd = "wget #{ext} #{link} -OutFile #{output}"
     self.run(cmd)
+  end
+  #downloadCommandHere
+  def downloadProgress(filename, url)
+    #run(%Q( -executionpolicy bypass "& ""#{Dir.pwd}/_dCodeProgress.ps1"""))
   end
 end
 }
