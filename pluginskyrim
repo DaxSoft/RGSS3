@@ -1,0 +1,57 @@
+#* Configuração geral *#
+
+Name: Skyrim UI
+Version: 3.0
+Size: ~1.7MB
+<new>Info about the current version:
+Updated to the new version of plugin system</new>
+Website: www.dax-soft.weebly.com
+Date: 21/05/2016
+
+#* Informações do plugin para o PluginManager *#
+
+/*Created by: Dax
+Date: 21/05/2016
+Any bug or whatever, contact-me
+
+Pack of scripts that change the UI of your game, to look like with the UI of Skyrim. The UI of Skyrim was adapted to the Maker.
+*/
+
+#* Todos os arquivos dentro do file, serão executados *#
+<files>
+o: rb
+folder: Skyrim
+skyrim_ui_module <l: https://raw.githubusercontent.com/DaxSoft/Skyrim-UI/master/Data/Plugins/Skyrim/skyrim_ui_module.rb> 
+mouse_window_selectable <l: https://raw.githubusercontent.com/DaxSoft/Skyrim-UI/master/Data/Plugins/mouse_window_selectable.rb>
+skyrim_ui_title <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Data/Plugins/Skyrim/skyrim_ui_title.rb>
+skyrim_ui_main_menu <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Data/Plugins/Skyrim/skyrim_ui_main_menu.rb>
+</files>
+
+#* Thumbnail *#
+<graphic>
+output: png
+folder: Skyrim
+# Skyrim <l: http://dax-soft.weebly.com/uploads/1/5/7/2/15724724/956780225.png> <f: Thumbnail>
+# BackBar <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/BackBar.png>
+# BackBar2 <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/BackBar2.png>
+# Background <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/Background.png>
+# Cursor <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/Cursor.png>
+# HpBar <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/HpBar.png>
+# HpBar2 <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/HpBar2.png>
+# Icon <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/Icon.png>
+# Layout Item <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/Layout%20Item.png>
+# SkillBar <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/SkillBar.png>
+# SkillBar2 <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/SkillBar2.png>
+# SkinUIMenu <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/SkinUIMenu.png>
+# SkinUIMenu2 <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/SkinUIMenu2.png>
+# Windows 1 <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/Windows%201.png>
+# Windows 2 <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/Windows%202.png>
+# Windows 3 <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/Windows%203.png>
+# XpBar <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/XpBar.png>
+# XpBar2 <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/XpBar2.png>
+# smoke3 <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/smoke3.png>
+</graphic>
+
+<project>
+# Futura-Medium-Condensed-BT.ttf <l: https://github.com/DaxSoft/RGSS3/blob/master/Futura-Medium-Condensed-BT.ttf?raw=true> <f: Fonts>
+</project>
