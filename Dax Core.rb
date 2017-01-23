@@ -3074,6 +3074,7 @@ module Mouse
   # • Verificar se o mouse está em determinada área
   #----------------------------------------------------------------------------
   def area?(x, y, width, height)
+    return if @cursor.disposed?
     return @cursor.x.between?(x, x + width) &&
       @cursor.y.between?(y, y + height)
   end
