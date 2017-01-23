@@ -30,6 +30,7 @@ skyrim_ui_main_menu <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Data/Plu
 #* Thumbnail *#
 <graphic>
 output: png
+folder: Skyrim
 # Skyrim <l: http://dax-soft.weebly.com/uploads/1/5/7/2/15724724/956780225.png> <f: Thumbnail>
 # BackBar <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/BackBar.png>
 # BackBar2 <l: https://github.com/DaxSoft/Skyrim-UI/raw/master/Graphics/Skyrim/BackBar2.png>
