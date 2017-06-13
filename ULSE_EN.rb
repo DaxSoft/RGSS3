@@ -2,8 +2,8 @@
 # • Ultimate Sensor Event [EN]
 #==============================================================================
 # Author: Dax
-# Requeris: Dax Core
-# Version: 5.1
+# Requeris: Ligni Core
+# Version: 5.2
 # Site: www.dax-soft.weebly.com
 #==============================================================================
 # @tiagoms : Feedback that helped improve more on the project
@@ -45,70 +45,14 @@
 # Update to the new version of the Core.
 # • [5.1]
 # Option to set which switch will be activated...
-# Option to control the sound emitted by the event, according your position.
-# A : Filename
-# B : ID of the event. Set 0 to local event.
-# C : Type of the file:
-#   :bgm
-#   :bgs
-#   :me
-#   :se
-# D : Control of the distance by tile. Default is 10, but you can set by the 
-# variable $ulsound.
-# T : Wait a certain amount of the time to return to sound. Optional. Set in seconds.
-# P : Percent of the volume. Default is 1.0(100%)
-# Command: ulse_sound(B, A, C, D, T, P)
+# • [5.2] 
+# Removed the UlseSound
 #------------------------------------------------------------------------------
 # * The item 2, 3, 4 and 5 are statics, would fix independent of the direction 
 # that the event is.
 # * The items 7, 9, 10, 11: In straight line
 #==============================================================================
-Dax.register(:ultimate_sensor_event, "Dax", 5.1) {
-  #============================================================================
-  # • TimeUlseSound
-  #============================================================================
-  class TimeUlseSound
-    #--------------------------------------------------------------------------
-    # • Variables
-    #--------------------------------------------------------------------------
-    attr_accessor :timeMax
-    attr_accessor :timeCurrent
-    #--------------------------------------------------------------------------
-    # • initialize
-    #--------------------------------------------------------------------------
-    def initialize
-      @timeMax = {}
-      @timeCurrent = {}
-    end
-    #--------------------------------------------------------------------------
-    # • Definir tempo máximo
-    #--------------------------------------------------------------------------
-    def tM(tm, id)
-      @timeMax[id] = tm.abs * 60 rescue 60
-    end
-    #--------------------------------------------------------------------------
-    # • update
-    #--------------------------------------------------------------------------
-    def update(id)
-      @timeCurrent[id] = DMath.clamp(@timeMax[id], 0, @timeMax[id]) if @timeCurrent[id].nil?
-      if @timeCurrent[id] <= 0
-        @timeCurrent[id] = @timeMax[id]
-      else
-        @timeCurrent[id] -= 1
-      end
-    end
-    #--------------------------------------------------------------------------
-    # • ok?
-    #--------------------------------------------------------------------------
-    def ok?(id)
-      return false unless @timeCurrent.has_key?(id)
-      return @timeCurrent[id] <= 0
-    end
-  end
-  #--------------------------------------------------------------------------
-  # • Variavel Global
-  #--------------------------------------------------------------------------
-  $ulsound = 10
+Ligni.register(:ultimate_sensor_event, "dax", 5.2) {
   #============================================================================
   # • Game_Interpreter
   #============================================================================
@@ -120,27 +64,6 @@ Dax.register(:ultimate_sensor_event, "Dax", 5.1) {
     def initialize(*args)
       _sensorEvent_init
       @_nozero = ->(number) { return (number < 0 || number.nil? ? 1 : number.to_i) }
-      @timeUlseSound = TimeUlseSound.new
-    end
-    #--------------------------------------------------------------------------
-    # • Ulse Sound
-    #--------------------------------------------------------------------------
-    def ulse_sound(b, a, c, d=$ulsound, time=nil, p=1.0)
-      b = b == 0 ? nil : b
-      eve = $game_map.events[b.nil? ? @event_id : Integer(b)]
-      dist = DMath.distance_sensor($game_player, eve)
-      # r = r1 * sqrt(L1/L2)
-      dist =  DMath.to_4_dec(dist * Math.log2(d))
-      vol = (dist) * Math.sqrt( (  (d-dist)/(100)  ).abs )
-      vol = 100 - DMath.clamp(vol, 1, 100)
-      vol = DMath.to_4_dec(vol) * p
-      if time.nil? or time <= 0 
-        SoundBase.play(a, vol, 100, c)
-      else
-        @timeUlseSound.tM(time, eve.id)
-        @timeUlseSound.update(eve.id)
-        SoundBase.play(a, vol, 100, c) if @timeUlseSound.ok?(eve.id)
-      end
     end
     #--------------------------------------------------------------------------
     # • Pega as coordenadas do evento é do player.
@@ -155,7 +78,7 @@ Dax.register(:ultimate_sensor_event, "Dax", 5.1) {
     def sarea?(a=1, b=nil, c=nil)
       b = nil if b == 0
       a = @_nozero[a]
-      distance = DMath.distance_sensor($game_player, $game_map.events[b.nil? ? @event_id : Integer(b)])
+      distance = Ligni::Mathf.euclidian_distance2d($game_player, $game_map.events[b.nil? ? @event_id : Integer(b)])
       $game_switches[c] = (distance <= a) unless c.nil?
       return (distance <= a)
     end
