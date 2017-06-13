@@ -30,7 +30,7 @@
 #~ * to save on registr file
 #~ data.save
 #~ * to load the register file
-#~ data.load
+#~ data.load // Ligni::Download.load
 #~ * to open the file
 #~ data.open
 #~ * to run the file, if it is possible
@@ -226,7 +226,7 @@ class Ligni::Download
   #----------------------------------------------------------------------------
   # • register's file : load all registered file | retorn to hash
   #----------------------------------------------------------------------------
-  def load()
+  def self.load()
     return {} unless FileTest.exist?("./lducmd_register.rvdata2")
     file = File.open("./lducmd_register.rvdata2", "rb")
     import = ->(content) {
