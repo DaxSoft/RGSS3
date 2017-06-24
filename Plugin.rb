@@ -2,7 +2,7 @@
 # • Plugin
 #==============================================================================
 # Author: Dax Soft
-# Version: 3.5
+# Version: 3.6
 # Site: www.dax-soft.weebly.com
 # Requeriment: Ligni Core & lducmd 
 # tiagoms : Feedback that helped improve more on the project
@@ -16,7 +16,10 @@
 #==============================================================================
 Ligni.setup[:registerPlugin] = [
   # [ (symbol)script name, (string)author, (numeric)version, (string)url ],
-  [:steampunk_hud, "dax", 0.0, "https://pastebin.com/raw/mGjQMB95"]
+  [:steampunk_hud, "dax", 0.0, "https://pastebin.com/raw/mGjQMB95"],
+  [:ulse_en, "dax", 0.0, "http://pastebin.com/raw/eWxBengr"],
+  [:event_bar, "dax", 0.0, "https://pastebin.com/raw/ZRLKKGA7"],
+  [:plugin_name, "author", 0.0, "https://pastebin.com/raw/3VwiWtU2"],
 ]
 #==============================================================================
 # • How to use: http://tutorial-dax.weebly.com/plugin.html
@@ -52,12 +55,14 @@ Ligni.setup[:registerPlugin] = [
 #    Benchmark Optional Test
 # [3.5]
 #    New way to Download File
+#    Install script's file.
 #==============================================================================
-Ligni.register(:plugin, "dax", 3.5, [[:lducmd, "dax"]]) {
+Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
   #==========================================================================
   # • Default Folders and Global Variable $ROOT_PATH
   #==========================================================================
-  ["#{Dir.pwd}/Data/Plugins", "#{Dir.pwd}/Data/Plugins/About"].each { |_dir|
+  ["#{Dir.pwd}/Data/Plugins", "#{Dir.pwd}/Data/Plugins/About",
+  "#{Dir.pwd}/Data/Scripts"].each { |_dir|
     Dir.mkdir(_dir) unless FileTest.directory?(_dir)
   }
   $ROOT_PATH = ->(filename, dir="") { "#{Dir.pwd}/Data/Plugins/#{dir}#{filename}" }
@@ -76,6 +81,7 @@ Ligni.register(:plugin, "dax", 3.5, [[:lducmd, "dax"]]) {
     #--------------------------------------------------------------------------
     @@register = {}
     @@download = {}
+    @@script = { file: [], disable: [] }
     class << self; attr_accessor :buttonGeral; attr_accessor :currentPlugin end;
     @buttonGeral = true
     @currentPlugin = nil
@@ -89,9 +95,9 @@ Ligni.register(:plugin, "dax", 3.5, [[:lducmd, "dax"]]) {
     # Key to active the menu
     KEY = :F8
     # Version of the Plugin
-    VERSION = "3.5"
-    # Temp file
-    TEMP = "temp.tmp"
+    VERSION = "3.6"
+    # Version of the Script Manager
+    VERSION_S = "0.1"
     # Setup of the all message.
     MSG = {
       CONF: "Do you wish check/download new versions of the plugins?\nIf be the first time running, will happens a little delay, just wait...\nPress #{KEY} to access the menu.",
@@ -101,6 +107,7 @@ Ligni.register(:plugin, "dax", 3.5, [[:lducmd, "dax"]]) {
       FORMAT: API::MessageBox::ICONINFORMATION|API::MessageBox::YESNO,
       TITLE: "Plugin Manager #{VERSION}",
       PLMS: "Plugin Manager #{VERSION} [ installed: %02d ]",
+      SMS: "Script Manager #{VERSION_S} [ installed: %02d ]",
       BACK: "Go back",
       CL: "%s [%.2f] [%s]",
       DELETE: "Delete",
@@ -113,13 +120,16 @@ Ligni.register(:plugin, "dax", 3.5, [[:lducmd, "dax"]]) {
       FILE: "Help",
       WEBSITE: "Contact",
       RESET: "Reset",
+      SCRIPTS: "Scripts",
       WEBGO: "Are you sure that you want go to the website?",
       DELGO: "Are you sure that you want delete this plugin?",
       RESGO: "Are you sure that you want reset all this plugin?",
       NEXT: "Next",
       PRED: "Pred",
       AD: "The plugin was disabled",
-      AD2: "The plugin was actiaved",
+      AD2: "The plugin was activated",
+      SAD: "The script was disabled",
+      SAD2: "The script was activated",
       AD3: "Click on thumbnail to active/disable the script",
     }
     # Setup of the all tag
@@ -136,6 +146,8 @@ Ligni.register(:plugin, "dax", 3.5, [[:lducmd, "dax"]]) {
     PLUGIN_REGISTER_FILE = "#{Dir.pwd}/Data/Plugin.rvdata2"
     # Start with all plugin disabled
     DISABLED = false
+    # Start with all script disabled
+    SCRIPT_DISABLED = false
     # Type of files that will download by string way
     CheckText = [
       ".rb", ".txt", ".rvdata2", ".xml", ".json"
@@ -223,6 +235,39 @@ Ligni.register(:plugin, "dax", 3.5, [[:lducmd, "dax"]]) {
       return true
     end
     #--------------------------------------------------------------------------
+    # • pickup script
+    #--------------------------------------------------------------------------
+    def script
+      @@script
+    end
+    #--------------------------------------------------------------------------
+    # • Check Script Dir
+    #--------------------------------------------------------------------------
+    def scriptCheck()
+      @@script[:file] = API::FindPlus.new("./Data/Scripts", "rb").file
+      #@@script[:file].each_index { |i| @@script[:disable][i] = false }
+    end
+    #--------------------------------------------------------------------------
+    # • Load all the script files
+    #--------------------------------------------------------------------------
+    def startScript(ch=false)
+      scriptCheck()
+      loadRegister() if ch
+      @@script[:file].each_index { |i| @@script[:disable][i] = false if @@script[:disable][i].nil? }
+      if SCRIPT_DISABLED
+        Plugin.script[:disable].collect! { |i| i = true }
+      end
+      
+      @@script[:file].each_with_index { |file, n|
+        next if @@script[:disable][n] 
+        file.gsub!(/\/\/|\/\/\//, "/")
+        puts "Running: %s" % file
+        load(file)
+      }
+      
+      return nil
+    end
+    #--------------------------------------------------------------------------
     # • Load all the plugin files
     #--------------------------------------------------------------------------
     def start()
@@ -243,6 +288,8 @@ Ligni.register(:plugin, "dax", 3.5, [[:lducmd, "dax"]]) {
           load(i)
         } #rescue next
       }
+      # start script
+      startScript(false)
       return nil
     end
     #--------------------------------------------------------------------------
@@ -270,6 +317,28 @@ Ligni.register(:plugin, "dax", 3.5, [[:lducmd, "dax"]]) {
           return
         end
       end
+    end
+    #--------------------------------------------------------------------------
+    # • scriptDelete
+    #--------------------------------------------------------------------------
+    def scriptDelete(file, all=false)
+      unless all
+        index = @@script[:file].index(file)
+        @@script[:file].delete_at(index)
+        @@script[:disable].delete_at(index)
+        puts "Deleteting file... #{file}"
+        File.delete(file) if FileTest.exist?(file)
+        puts "File deleted!"
+      else
+        @@script[:file].each_with_index {|i,n|
+         @@script[:file].delete_at(n)
+         @@script[:disable].delete_at(n)
+         puts "Deleteting file... #{i}"
+         File.delete(i) if FileTest.exist?(i)
+         puts "File deleted!"
+        }
+      end
+      return true
     end
     #--------------------------------------------------------------------------
     # • Reset
@@ -358,6 +427,7 @@ Ligni.register(:plugin, "dax", 3.5, [[:lducmd, "dax"]]) {
         export = ->() {
           content = {}
           content[:register] = @@register
+          content[:script] = @@script
           content
         }
         Marshal.dump(export.call, file)
@@ -371,6 +441,7 @@ Ligni.register(:plugin, "dax", 3.5, [[:lducmd, "dax"]]) {
       File.open(PLUGIN_REGISTER_FILE, "rb") { |file|
         import = ->(content) {
           @@register.merge!(content[:register]) rescue {}
+          @@script.merge!(content[:script]) rescue {}
         }
         import[Marshal.load(file)]
       }
@@ -817,6 +888,98 @@ Ligni.register(:plugin, "dax", 3.5, [[:lducmd, "dax"]]) {
     end
   end
   #============================================================================
+  # • Plugin::Button_Script
+  #============================================================================
+  class Plugin::Button_Script < Sprite
+    attr_accessor :clicked
+    attr_accessor :delete
+    #--------------------------------------------------------------------------
+    # • Inicialização.
+    #--------------------------------------------------------------------------
+    def initialize(pos, file)
+      @clicked = false
+      @file = file
+      pos = pos.position
+      super([Graphics.width, 24, pos.x, pos.y, 100])
+      self.bitmap.fill_rect(self.rect, "131d22".color)
+      @thumbp = Sprite.new([16,16])
+      @thumbp.z = 500
+      changeThumbp
+      Plugin::FONT_PROC[self.bitmap, :title]
+      self.bitmap.draw_text(48, 0, 314, 24, @file.to_s)
+      @delete = Plugin::Button.new([Graphics.width + 100, self.y], Plugin::MSG[:DELETE], 96, 24) {
+        hresult = API::MessageBox.call(Plugin::MSG[:TITLE], Plugin::MSG[:DELGO], Plugin::MSG[:FORMAT])
+        if hresult == API::MessageBox::YES
+          Plugin.scriptDelete(@file)
+        end
+      }
+      update
+    end
+    #--------------------------------------------------------------------------
+    # • Terminate
+    #--------------------------------------------------------------------------
+    def dispose
+      self.bitmap.dispose
+      super
+      @delete.dispose
+      @thumbp.dispose
+    end
+    
+    def changeThumbp
+      index = Plugin.script[:file].index(@file)
+      color = Plugin.script[:disable][index] ? Ligni::Color.red : Ligni::Color.green
+      @thumbp.bitmap.clear
+      @thumbp.bitmap.fill_rect(@thumbp.rect, color)
+    end
+    
+    #--------------------------------------------------------------------------
+    # • Update
+    #--------------------------------------------------------------------------
+    def update
+      super
+      @delete.update
+      @delete.y = self.y 
+      @delete.slide_left(10, Graphics.width - 100)
+      @thumbp.visible = self.visible
+      @thumbp.y = self.y + 4
+      @thumbp.x = self.x + 4
+      [self, @delete].each { |i| 
+        index =  Plugin.script[:file].index(@file)
+        i.opacity = 64 if Plugin.script[:disable][index]
+        i.visible = self.visible
+      } rescue return
+      @thumbp.if_mouse_click { disableEnable; changeThumbp }
+    end
+    #----------------------------------------------------------------------------
+    # • O que irá acontecer sê o mouse estiver em cima do sprite?
+    #----------------------------------------------------------------------------
+    def mouse_over
+      self.opacity = 255
+    end
+    #----------------------------------------------------------------------------
+    # • O que irá acontecer sê o mouse não estiver em cima do sprite?
+    #----------------------------------------------------------------------------
+    def mouse_no_over
+      self.opacity = 127.5
+    end
+    #----------------------------------------------------------------------------
+    # • O que irá acontecer sê o mouse clicar no objeto
+    #----------------------------------------------------------------------------
+    def mouse_click
+      return unless self.visible
+      @clicked = !@clicked
+    end
+    
+    def disableEnable
+      index = Plugin.script[:file].index(@file)
+      Plugin.script[:disable][index] = !Plugin.script[:disable][index]
+      Plugin.saveRegister
+      msgbox(Plugin.script[:disable][index] ? Plugin::MSG[:SAD] : Plugin::MSG[:SAD2])
+      Graphics.wait(10)
+      Plugin.startScript(true)
+    end
+  end
+  #============================================================================
   # • Scene_PluginManager
   #============================================================================
   class Scene_PluginManager < Scene_Base
@@ -847,6 +1010,13 @@ Ligni.register(:plugin, "dax", 3.5, [[:lducmd, "dax"]]) {
       }
       @back.position 1
       @back.x += 212
+      
+      @script = Plugin::Button.new([0,8], Plugin::MSG[:SCRIPTS]) {
+        SceneManager.call(Scene_ScriptManager) unless Plugin.script[:file].size < 1
+      }
+      @script.position 1
+      @script.x += 4
+      
       @index = 0
       create_list
     end
@@ -884,7 +1054,7 @@ Ligni.register(:plugin, "dax", 3.5, [[:lducmd, "dax"]]) {
     #--------------------------------------------------------------------------
     def terminate
       super
-      [@reset, @back, @title].each(&:dispose)
+      [@reset, @back, @title, @script].each(&:dispose)
       @data.each(&:dispose) unless @data.empty?
     end
     #--------------------------------------------------------------------------
@@ -892,7 +1062,7 @@ Ligni.register(:plugin, "dax", 3.5, [[:lducmd, "dax"]]) {
     #--------------------------------------------------------------------------
     def update
       super
-      [@reset, @back].each { |i|
+      [@reset, @back, @script].each { |i|
         i.update
       }
       @data.each(&:update) unless @data.empty?
@@ -960,6 +1130,96 @@ Ligni.register(:plugin, "dax", 3.5, [[:lducmd, "dax"]]) {
     def update
       super
       [@back, @web, @info, @current].each(&:update)
+    end
+  end
+  #============================================================================
+  # • Scene_ScriptManager
+  #============================================================================
+  class Scene_ScriptManager < Scene_Base
+    #--------------------------------------------------------------------------
+    # • start
+    #--------------------------------------------------------------------------
+    def start
+      super
+      @data = []
+      puts Plugin::MSG[:AD3]
+      @title = Sprite.new([316, 24, 8, 12, 200])
+      Plugin::FONT_PROC[@title.bitmap, :small]
+      @title.bitmap.draw_text_rect(Plugin::MSG[:SMS] % Plugin.script[:file].size)
+      @reset = Plugin::Button.new([0, 8], Plugin::MSG[:RESET]) {
+        hresult = API::MessageBox.call(Plugin::MSG[:TITLE], Plugin::MSG[:RESGO], Plugin::MSG[:FORMAT])
+        if hresult == API::MessageBox::YES
+          return if Plugin.size < 1
+          Plugin.scriptDelete("", true)
+          SceneManager.exit
+        end
+        
+      }
+      @reset.position 1
+      @reset.x += 108
+      @back = Plugin::Button.new([0, 8], Plugin::MSG[:BACK]) {
+        SceneManager.return
+      }
+      @back.position 1
+      @back.x += 212
+      
+      @index = 0
+      create_list
+    end
+    
+    def create_list
+      return if Plugin.size < 1
+      @data.clear
+      Plugin.script[:file].each { |value|
+        @data.push(Plugin::Button_Script.new([0,48],value))
+      } 
+      posdata
+    end
+    
+    def posdata
+      @data.each_with_index { |i, n|
+        i.y = 48 + ( (24) * ( ( (@index + n) ) % @data.size ) )
+      }
+      Graphics.wait(10)
+    end
+    
+    def nexto
+      return if @data.size < 8
+      @index = @index.next % @data.size
+      posdata
+    end
+  
+    def predo
+      return if @data.size < 8
+      @index = @index.pred % @data.size
+      posdata
+    end
+    #--------------------------------------------------------------------------
+    # • terminate
+    #--------------------------------------------------------------------------
+    def terminate
+      super
+      [@reset, @back, @title].each(&:dispose)
+      @data.each(&:dispose) unless @data.empty?
+    end
+    #--------------------------------------------------------------------------
+    # • update 
+    #--------------------------------------------------------------------------
+    def update
+      super
+      [@reset, @back].each { |i|
+        i.update
+      }
+      @data.each(&:update) unless @data.empty?
+      @data.each_with_index { |i, n|
+        create_list if i.delete.clicked
+      }
+      create_list if @reset.clicked
+      if Ligni::Mouse.area?(0, 48, Graphics.width, 8)
+        nexto
+      elsif Ligni::Mouse.area?(0, Graphics.height-8, Graphics.width, 8)
+        predo
+      end
     end
   end
   #============================================================================
