@@ -19,7 +19,6 @@ Ligni.setup[:registerPlugin] = [
   [:steampunk_hud, "dax", 0.0, "https://pastebin.com/raw/mGjQMB95"],
   [:ulse_en, "dax", 0.0, "http://pastebin.com/raw/eWxBengr"],
   [:event_bar, "dax", 0.0, "https://pastebin.com/raw/ZRLKKGA7"],
-  [:plugin_name, "author", 0.0, "https://pastebin.com/raw/3VwiWtU2"],
 ]
 #==============================================================================
 # • How to use: http://tutorial-dax.weebly.com/plugin.html
@@ -273,6 +272,8 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
     def start()
       # load all register file
       loadRegister()
+      # start script
+      startScript(false)
       # check out the disable option
       if DISABLED
         Plugin.data.each_pair { |n,i|
@@ -288,8 +289,6 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
           load(i)
         } #rescue next
       }
-      # start script
-      startScript(false)
       return nil
     end
     #--------------------------------------------------------------------------
@@ -464,7 +463,7 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
           type: "-text"
         })
         #_pDownload.renameFile(File.basename(TEMP, File.extname(TEMP)), File.extname(TEMP))
-        tempFile = File.open(_pDownload.get.absolutePath, "rb")
+        tempFile = File.open(_pDownload.get.absolutePath, "rb") rescue next
         @@download[[*key]] = Plugin::Parse.get(tempFile.read) 
         _size = @@download[[*key]][:size]
         version = @@download[[*key]][:version]
