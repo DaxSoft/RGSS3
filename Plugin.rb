@@ -272,8 +272,6 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
     def start()
       # load all register file
       loadRegister()
-      # start script
-      startScript(false)
       # check out the disable option
       if DISABLED
         Plugin.data.each_pair { |n,i|
@@ -289,6 +287,8 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
           load(i)
         } #rescue next
       }
+      # start script
+      startScript(true)
       return nil
     end
     #--------------------------------------------------------------------------
@@ -1167,7 +1167,7 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
     end
     
     def create_list
-      return if Plugin.size < 1
+      return if Plugin.script[:file].size < 1
       @data.clear
       Plugin.script[:file].each { |value|
         @data.push(Plugin::Button_Script.new([0,48],value))
