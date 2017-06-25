@@ -2,9 +2,9 @@
 # • Ligni Download by cmd
 #==============================================================================
 # Author: Dax
-# Version: 1.0
+# Version: 1.2
 # Site: www.dax-soft.weebly.com
-# Requeriments: Ligni Core | ldufcmd.exe (download at my website, just there)
+# Requeriments: Ligni Core | cmd_url_download.exe (download at my website, just there)
 #==============================================================================
 # • Desc:
 #------------------------------------------------------------------------------
@@ -18,7 +18,8 @@
 #~   filename: "personal filename, for default is -f, original filename",
 #~   ext: "personal extension, for default is -e, original extension",
 #~   path: "personal directory path, for default is -path, original position of the app"
-#~ }) 
+#~ }, message, start)
+#~   - message : show a message saying that download is finished. Default is false
 #~ * to rename the file
 #~ data.rename({
 #~   name: "new name",
@@ -53,7 +54,7 @@
 #~   })
 #~ } 
 #==============================================================================
-Ligni.register(:lducmd, "dax", 1.0) {
+Ligni.register(:lducmd, "dax", 1.2) {
 #==============================================================================
 # • Ligni::DownloadURL
 #==============================================================================
@@ -80,7 +81,7 @@ class Ligni::Download
   # default is false.
   #----------------------------------------------------------------------------
   def initialize(hash={}, message=false)
-    raise("Don't found ldufcmd.exe") unless FileTest.exist?("./ldufcmd.exe")
+    raise("Don't found cmd_url_download.exe") unless FileTest.exist?("./cmd_url_download.exe")
     @downloaded = false
     @data = {}
     @data[:get] = Struct.new(:Get, :absolutePath, :path, :filename, :extension)
@@ -99,7 +100,7 @@ class Ligni::Download
       return [str, ext]
     }
     @message = message
-    startDownload()
+    startDownload() 
     yield(self) if block_given?
   end
   #----------------------------------------------------------------------------
@@ -109,10 +110,13 @@ class Ligni::Download
     # case senstive on filename 
     @data[:main][:filename].gsub!(" ", "_") unless @data[:filename] == "-f"
     # download system call out
-    system(sprintf("start ./ldufcmd.exe %s %s %s %s %s", @data[:main][:type],
-      @data[:main][:url], @data[:main][:path],
-      @data[:main][:filename], @data[:main][:ext] 
-    ))
+    # get string 
+    _spec = sprintf("start ./cmd_url_download.exe %s %s %s %s %s", @data[:main][:type],
+      @data[:main][:url], @data[:main][:filename], @data[:main][:ext], 
+      @data[:main][:path]
+    )
+    # calling
+    `#{_spec}`
     # forcedDownload
     forcedDownload()
     # message
@@ -159,7 +163,7 @@ class Ligni::Download
   def forcedDownload()
     loop {
       # downloading?
-      status = `tasklist | find "ldufcmd.exe"`
+      status = `tasklist | find "cmd_url_download.exe"`
       # end download?
       if status.empty?
         # getRecent
