@@ -63,7 +63,7 @@ class Ligni::Crypto
     @data[:get] = @data[:get].new("", "", "", "")
     hash[:key] = "admin" unless hash.has_key?(:key)
     hash[:type] = "-encrypt" unless hash.has_key?(:type)
-    hash[:hidden] = "" unless hash.has_key?(:hidden)
+    hash[:hidden] = "_" unless hash.has_key?(:hidden)
     unless hash.has_key?(:file)
       raise("file don't defined")
     else
@@ -87,11 +87,11 @@ class Ligni::Crypto
   #----------------------------------------------------------------------------
   def startCrypto()
     # get the spec
-    _getSpecSystem = sprintf("start cmd_encryptDec_file.exe %s %s %s %s",
+    _getSpecSystem = sprintf("start ./cmd_encryptDec_file.exe %s %s %s %s",
                             @data[:main][:type], @data[:main][:key], 
                             @data[:main][:file], @data[:main][:hidden])
     # call
-    `#{_getSpecSystem}`
+   `#{_getSpecSystem}`
     # forced waiting
     forcedWaiting
     # completed
