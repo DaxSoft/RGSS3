@@ -1183,13 +1183,13 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
     end
     
     def nexto
-      return if @data.size < 8
+      return if @data.size < 16
       @index = @index.next % @data.size
       posdata
     end
   
     def predo
-      return if @data.size < 8
+      return if @data.size < 16
       @index = @index.pred % @data.size
       posdata
     end
