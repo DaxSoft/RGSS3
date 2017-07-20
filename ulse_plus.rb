@@ -44,10 +44,10 @@ Ligni.register(:ulse, "dax", 6.0) {
         #   best: 5-15
         #   medium: 15-35
         #   bad: 35-60
-        ULSE_UPDATE = 25
+        ULSE_UPDATE = 5
         # get the coord of player and event
         def getCoordPE(id=nil) # id event 
-            event = $game_map.events[id.nil? ? @event_id : Integer(id.abs)]
+            event = get_character(id)
             yield(event.x, event.y, $game_player.x, $game_player.y)
         end
         # get the coord of two event
@@ -79,7 +79,7 @@ Ligni.register(:ulse, "dax", 6.0) {
                         return true if ey == y
                     }
                 } if (Graphics.frame_count %= ULSE_UPDATE)
-            else 
+            else
                 getCoordPE(eid) { |ex, ey, px, py|
                     return unless px == ex 
                     (ey..(ey + tile)).each { |y|
@@ -88,7 +88,7 @@ Ligni.register(:ulse, "dax", 6.0) {
                         return true if py == y 
                     }
                 } if (Graphics.frame_count %= ULSE_UPDATE)
-            end 
+            end
             $game_switches[sid] = false unless sid.nil?
             return false 
         end 
@@ -194,7 +194,7 @@ Ligni.register(:ulse, "dax", 6.0) {
         end
         # uVision?
         def uVision?(tile=1, eid=0, sid=nil)
-            case get_character(eid.is_a?(Array) ? eid.last : eid)
+            case get_character(eid.is_a?(Array) ? eid.last : eid).direction
             when 2 then uFront?(tile, eid, sid)
             when 4 then uLeft?(tile, eid, sid)
             when 6 then uRight?(tile, eid, sid)
@@ -203,7 +203,7 @@ Ligni.register(:ulse, "dax", 6.0) {
         end
         # uBehind?
         def uBehind?(tile=1, eid=0, sid=nil)
-            case get_character(eid.is_a?(Array) ? eid.last : eid)
+            case get_character(eid.is_a?(Array) ? eid.last : eid).direction
             when 8 then uFront?(tile, eid, sid)
             when 6 then uLeft?(tile, eid, sid)
             when 4 then uRight?(tile, eid, sid)
@@ -212,7 +212,7 @@ Ligni.register(:ulse, "dax", 6.0) {
         end
         # vLeft?
         def vLeft?(tile=1, eid=0, sid=nil)
-            case get_character(eid.is_a?(Array) ? eid.last : eid)
+            case get_character(eid.is_a?(Array) ? eid.last : eid).direction
             when 4 then uFront?(tile, eid, sid)
             when 8 then uLeft?(tile, eid, sid)
             when 2 then uRight?(tile, eid, sid)
@@ -221,7 +221,7 @@ Ligni.register(:ulse, "dax", 6.0) {
         end
         # vRight?
         def vRight?(tile=1, eid=0, sid=nil)
-            case get_character(eid.is_a?(Array) ? eid.last : eid)
+            case get_character(eid.is_a?(Array) ? eid.last : eid).direction
             when 4 then uFront?(tile, eid, sid)
             when 2 then uLeft?(tile, eid, sid)
             when 8 then uRight?(tile, eid, sid)
@@ -334,7 +334,7 @@ Ligni.register(:ulse, "dax", 6.0) {
         end
         # vDiagonal?
         def vDiagonal?(tile=1, eid=0, sid=nil)
-            case get_character(eid.is_a?(Array) ? eid.last : eid)
+            case get_character(eid.is_a?(Array) ? eid.last : eid).direction
             when 2 then diLeft?(tile, eid, sid) || diRight?(tile, eid, sid)
             when 4 then dLeft?(tile, eid, sid) || diLeft?(tile, eid, sid)
             when 6 then dRight?(tile, eid, sid) || diRight?(tile, eid, sid)
@@ -350,7 +350,7 @@ Ligni.register(:ulse, "dax", 6.0) {
         def uCubic?(tile=3, eid=0, sid=nil)
             eid = 0 if eid.nil?
             if eid.is_a?(Array)
-                case get_character(eid.last)
+                case get_character(eid.last).direction
                 when 2
                     getCoordEE(*eid) { |ex, ey, px, py|
                         (ex - (tile - 2)).upto(ex + (tile - 2)).each { |x|
@@ -397,7 +397,7 @@ Ligni.register(:ulse, "dax", 6.0) {
                     } if (Graphics.frame_count %= ULSE_UPDATE)
                 end
             else 
-                case get_character(eid)
+                case get_character(eid).direction
                 when 2
                     getCoordPE(eid) { |ex, ey, px, py|
                         (ex - (tile - 2)).upto(ex + (tile - 2)).each { |x|
