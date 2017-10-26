@@ -16,9 +16,10 @@
 #==============================================================================
 Ligni.setup[:registerPlugin] = [
   # [ (symbol)script name, (string)author, (numeric)version, (string)url ],
+  [:dsi, "dax", 0.0, "https://github.com/DaxSoft/RGSS3/raw/master/dsi_plugin.rb"],
   [:steampunk_hud, "dax", 0.0, "https://pastebin.com/raw/mGjQMB95"],
-  [:ulse_en, "dax", 0.0, "http://pastebin.com/raw/eWxBengr"],
-  [:event_bar, "dax", 0.0, "https://pastebin.com/raw/ZRLKKGA7"],
+  #[:ulse_en, "dax", 0.0, "http://pastebin.com/raw/eWxBengr"],
+  #[:event_bar, "dax", 0.0, "https://pastebin.com/raw/ZRLKKGA7"],
 ]
 #==============================================================================
 # • How to use: http://tutorial-dax.weebly.com/plugin.html
@@ -55,6 +56,8 @@ Ligni.setup[:registerPlugin] = [
 # [3.5]
 #    New way to Download File
 #    Install script's file.
+# [3.6]
+#    Correction at res.
 #==============================================================================
 Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
   #==========================================================================
@@ -243,7 +246,7 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
     # • Check Script Dir
     #--------------------------------------------------------------------------
     def scriptCheck()
-      @@script[:file] = API::FindPlus.new("./Data/Scripts", "rb").file
+      @@script[:file] = API::FindPlus.new("/Data/Scripts", "rb").file
       #@@script[:file].each_index { |i| @@script[:disable][i] = false }
     end
     #--------------------------------------------------------------------------
@@ -252,7 +255,7 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
     def startScript(ch=false)
       scriptCheck()
       loadRegister() if ch
-      @@script[:file].each_index { |i| @@script[:disable][i] = false if @@script[:disable][i].nil? }
+      @@script[:file].each_index { |i| @@script[:disable][i] = false if @@script[:disable][i].nil? } rescue return
       if SCRIPT_DISABLED
         Plugin.script[:disable].collect! { |i| i = true }
       end
@@ -261,7 +264,7 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
         next if @@script[:disable][n] 
         file.gsub!(/\/\/|\/\/\//, "/")
         puts "Running: %s" % file
-        load(file)
+        load(file) 
       }
       
       return nil
@@ -797,7 +800,7 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
       @info = Plugin.registerInfo(key, author)
       @kea = [key, author]
       pos = pos.position
-      super([Graphics.width, 48, pos.x, pos.y, 100])
+      super([544, 48, pos.x, pos.y, 100])
       self.bitmap.fill_rect(self.rect, "131d22".color)
       @thumbp = Sprite.new([32,32])
       @thumbp.z = 500
@@ -807,13 +810,13 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
       Plugin::FONT_PROC[self.bitmap, :small]
       cl = [@info[:author], @info[:version], @info[:date].chop]
       self.bitmap.draw_text(52, 28, 314, 18, Plugin::MSG[:CL] % cl)
-      @delete = Plugin::Button.new([Graphics.width + 100, self.y + 8], Plugin::MSG[:DELETE]) {
+      @delete = Plugin::Button.new([544 + 100, self.y + 8], Plugin::MSG[:DELETE]) {
         hresult = API::MessageBox.call(Plugin::MSG[:TITLE], Plugin::MSG[:DELGO], Plugin::MSG[:FORMAT])
         if hresult == API::MessageBox::YES
           Plugin.delete(key, author)
         end
       }
-      @about = Plugin::Button.new([Graphics.width + 100, self.y + 8], Plugin::MSG[:ABOUT]) {
+      @about = Plugin::Button.new([544 + 100, self.y + 8], Plugin::MSG[:ABOUT]) {
         Plugin.currentPlugin = @kea
         SceneManager.call(Scene_PluginAbout)
       }
@@ -845,8 +848,8 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
       @about.update
       @delete.y = self.y + 8
       @about.y = @delete.y
-      @delete.slide_left(10, Graphics.width - 100)
-      @about.slide_left(10, Graphics.width - 196)
+      @delete.slide_left(10, 544 - 100)
+      @about.slide_left(10, 544 - 196)
       @thumbp.visible = self.visible
       @thumbp.y = self.y + 8
       @thumbp.x = self.x + 8
@@ -899,14 +902,14 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
       @clicked = false
       @file = file
       pos = pos.position
-      super([Graphics.width, 24, pos.x, pos.y, 100])
+      super([544, 24, pos.x, pos.y, 100])
       self.bitmap.fill_rect(self.rect, "131d22".color)
       @thumbp = Sprite.new([16,16])
       @thumbp.z = 500
       changeThumbp
       Plugin::FONT_PROC[self.bitmap, :title]
       self.bitmap.draw_text(48, 0, 314, 24, @file.to_s)
-      @delete = Plugin::Button.new([Graphics.width + 100, self.y], Plugin::MSG[:DELETE], 96, 24) {
+      @delete = Plugin::Button.new([544 + 100, self.y], Plugin::MSG[:DELETE], 96, 24) {
         hresult = API::MessageBox.call(Plugin::MSG[:TITLE], Plugin::MSG[:DELGO], Plugin::MSG[:FORMAT])
         if hresult == API::MessageBox::YES
           Plugin.scriptDelete(@file)
@@ -938,7 +941,7 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
       super
       @delete.update
       @delete.y = self.y 
-      @delete.slide_left(10, Graphics.width - 100)
+      @delete.slide_left(10, 544 - 100)
       @thumbp.visible = self.visible
       @thumbp.y = self.y + 4
       @thumbp.x = self.x + 4
@@ -986,6 +989,8 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
     # • start
     #--------------------------------------------------------------------------
     def start
+      @_resKeep = [Graphics.width, Graphics.height]
+      Graphics.resize_screen(544, 416)
       super
       Plugin.checkUpdateMessage()
       @data = []
@@ -1052,6 +1057,7 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
     # • terminate
     #--------------------------------------------------------------------------
     def terminate
+      Graphics.resize_screen(*@_resKeep)
       super
       [@reset, @back, @title, @script].each(&:dispose)
       @data.each(&:dispose) unless @data.empty?
@@ -1069,9 +1075,9 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
         create_list if i.delete.clicked
       }
       create_list if @reset.clicked
-      if Ligni::Mouse.area?(0, 48, Graphics.width, 8)
+      if Ligni::Mouse.area?(0, 48, 544, 8)
         nexto
-      elsif Ligni::Mouse.area?(0, Graphics.height-8, Graphics.width, 8)
+      elsif Ligni::Mouse.area?(0, 416-8, 544, 8)
         predo
       end
     end
@@ -1084,9 +1090,11 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
     # • start
     #--------------------------------------------------------------------------
     def start
+      @_resKeep = [Graphics.width, Graphics.height]
+      Graphics.resize_screen(544, 416)
       @plugin = Plugin.registerInfo(*Plugin.currentPlugin)
       super
-      @title = Sprite.new([Graphics.width-32, 32, 16, 16, 200])
+      @title = Sprite.new([544-32, 32, 16, 16, 200])
       Plugin::FONT_PROC[@title.bitmap, :title]
       @title.bitmap.draw_text_rect(@plugin[:title].chop, 0)
       @back = Plugin::Button.new([0, 8], Plugin::MSG[:BACK]) {
@@ -1103,7 +1111,7 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
       }
       [@back, @current, @web, @info].each_with_index { |i, n|
         i.position 1
-        i.y = ( (Graphics.height - (48*4)) / 2 ) + 48 * n
+        i.y = ( (416 - (48*4)) / 2 ) + 48 * n
       }
     end
     
@@ -1120,6 +1128,7 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
     # • terminate
     #--------------------------------------------------------------------------
     def terminate
+      Graphics.resize_screen(*@_resKeep)
       super
       [@title, @back, @web, @info, @current].each(&:dispose)
     end
@@ -1139,6 +1148,8 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
     # • start
     #--------------------------------------------------------------------------
     def start
+      @_resKeep = [Graphics.width, Graphics.height]
+      Graphics.resize_screen(544, 416)
       super
       @data = []
       puts Plugin::MSG[:AD3]
@@ -1197,6 +1208,7 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
     # • terminate
     #--------------------------------------------------------------------------
     def terminate
+      Graphics.resize_screen(*@_resKeep)
       super
       [@reset, @back, @title].each(&:dispose)
       @data.each(&:dispose) unless @data.empty?
@@ -1214,9 +1226,9 @@ Ligni.register(:plugin, "dax", 3.6, [[:lducmd, "dax"]]) {
         create_list if i.delete.clicked
       }
       create_list if @reset.clicked
-      if Ligni::Mouse.area?(0, 48, Graphics.width, 8)
+      if Ligni::Mouse.area?(0, 48, 544, 8)
         nexto
-      elsif Ligni::Mouse.area?(0, Graphics.height-8, Graphics.width, 8)
+      elsif Ligni::Mouse.area?(0, 416-8, 544, 8)
         predo
       end
     end
