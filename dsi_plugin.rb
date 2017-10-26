@@ -29,11 +29,11 @@ dsi_menu <l: https://pastebin.com/raw/MeTmn427>
 <graphic>
 output: png
 folder: System
- msgbox <l: https://i.imgur.com/woeI6wK.png>
- MenuBackground <l: https://i.imgur.com/eU3D6Ge.png>
- Grassland <l: https://i.imgur.com/Y6IIWiE.png>
- savebutton <l: https://i.imgur.com/lhzKzqd.png>
- backdown <l: https://i.imgur.com/eU3D6Ge.png> <f: System/Title>
- backup <l: https://i.imgur.com/T92fX4w.png> <f: System/Title>
- logo <l: https://i.imgur.com/v6QT4uY.png> <f: System/Title>
+ msgbox <l: http://i.imgur.com/woeI6wK.png>
+ MenuBackground <l: http://i.imgur.com/eU3D6Ge.png>
+ Grassland <l: http://i.imgur.com/Y6IIWiE.png>
+ savebutton <l: http://i.imgur.com/lhzKzqd.png>
+ backdown <l: http://i.imgur.com/eU3D6Ge.png> <f: System/Title>
+ backup <l: http://i.imgur.com/T92fX4w.png> <f: System/Title>
+ logo <l: http://i.imgur.com/v6QT4uY.png> <f: System/Title>
 </graphic>
