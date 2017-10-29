@@ -4,7 +4,7 @@ Name: DSi
 Version: 0.32
 Size: ~1 MB
 <new>Info about the current version:
-Basic version of iDual Screen for Rpg Maker</new>
+Add on cursor sprite to selectable window menu</new>
 Website: www.dax-soft.weebly.com
 Date: 26/10/2017
 #* Informações do plugin para o PluginManager *#
