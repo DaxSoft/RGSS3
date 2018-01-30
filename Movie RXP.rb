@@ -8,6 +8,8 @@
    directory -> for default is "./Movies/%s", you just need a
 Movies folder at the main folder of the project.
  If triggered the [Space/C] will end up the movie
+ [Example]
+   Movie.new("movie.avi", 7)
 ----------------------------------------------------------------
  [API] - XP version from Ligni Core | 
  https://dax-soft.weebly.com/ligni-core.html
