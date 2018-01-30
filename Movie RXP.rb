@@ -9,9 +9,9 @@
    directory -> for default is "./Movies/%s", you just need a
 Movies folder at the main folder of the project.
  If triggered the [Space/C] will end up the movie
-   Movie.skip = false/true | for default is true. 
+   $game_temp.mskip = false/true | for default is true. 
  To change the refresh time
-   Movie.refresh = value | For default is 15. (1-60)
+   $game_temp.mrefresh = value | For default is 15. (1-60)
  [Example]
    Movie.new("movie.avi", 7)
 ----------------------------------------------------------------
@@ -354,23 +354,25 @@ module API
   end
 end
 #=================================================================
+# [ Game_Temp ] 
+#=================================================================
+class Game_Temp
+  attr_accessor :mskip
+  attr_accessor :mrefresh
+  alias :moviei :initialize
+  def initialize
+    moviei
+    @mskip = true
+    @mrefresh = 15
+  end
+end
+#=================================================================
 # [ Movie ] :movie
 #=================================================================
 class Movie
   #--------------------------------------------------------------
-  # skip
-  #--------------------------------------------------------------
-  @@skip = true
-  def self.skip=(value); @@skip = value || true; end
-  #--------------------------------------------------------------
-  # refresh value
-  #--------------------------------------------------------------
-  @@refresh = 15
-  def self.refresh=(value); @@refresh = value || 15; end; 
-  #--------------------------------------------------------------
   # constants
   #--------------------------------------------------------------
-  REFRESHTIME = Integer((60 * 60) * @@refresh) # refresh time.
   MCI = API.function(:void, "mciSendString", [:LPCTSTR, :LPTSTR, :UINT, :HANDLE], "winmm")
   #--------------------------------------------------------------
   # initialize | for default is on ./Movies, just type the filename
@@ -408,12 +410,12 @@ class Movie
         return
       end
       Input.update
-      if Input.trigger?(Input::C) && @@skip
+      if Input.trigger?(Input::C) && $game_temp.mskip
         terminate
         break 
         return
       end
-      if @refreshTime >= REFRESHTIME
+      if @refreshTime >= rtime
         Graphics.update 
         @refreshTime = 0
       end
@@ -426,5 +428,11 @@ class Movie
   def terminate
     MCI.call("close FILE",0,0,0)
     @screen.dispose
+  end
+  #--------------------------------------------------------------
+  # refresh time
+  #--------------------------------------------------------------
+  def rtime
+    Integer((60 * 60) * $game_temp.mrefresh)
   end
 end
