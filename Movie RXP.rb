@@ -372,7 +372,6 @@ class Movie
   #--------------------------------------------------------------
   REFRESHTIME = Integer((60 * 60) * @@refresh) # refresh time.
   MCI = API.function(:void, "mciSendString", [:LPCTSTR, :LPTSTR, :UINT, :HANDLE], "winmm")
-  SMESSAGE = API.function(:void, "SendMessage", [:HWND, :UINT, :WPARAM, :LPARAM])
   #--------------------------------------------------------------
   # initialize | for default is on ./Movies, just type the filename
   #--------------------------------------------------------------
