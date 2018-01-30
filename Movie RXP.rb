@@ -1,6 +1,6 @@
 =begin
  [Movie] by Dax Soft
- 0.5.3 version
+ 0.5.5 version
  Made to Vorum project
  
  To use: Movie.new(filename, duration, directory)
@@ -10,6 +10,8 @@
 Movies folder at the main folder of the project.
  If triggered the [Space/C] will end up the movie
    Movie.skip = false/true | for default is true. 
+ To change the refresh time
+   Movie.refresh = value | For default is 15. (1-60)
  [Example]
    Movie.new("movie.avi", 7)
 ----------------------------------------------------------------
@@ -361,9 +363,14 @@ class Movie
   @@skip = true
   def self.skip=(value); @@skip = value || true; end
   #--------------------------------------------------------------
+  # refresh value
+  #--------------------------------------------------------------
+  @@refresh = 15
+  def self.refresh=(value); @@refresh = value || 15; end; 
+  #--------------------------------------------------------------
   # constants
   #--------------------------------------------------------------
-  REFRESHTIME = Integer((60 * 60) * 3) # refresh time.
+  REFRESHTIME = Integer((60 * 60) * @@refresh) # refresh time.
   MCI = API.function(:void, "mciSendString", [:LPCTSTR, :LPTSTR, :UINT, :HANDLE], "winmm")
   SMESSAGE = API.function(:void, "SendMessage", [:HWND, :UINT, :WPARAM, :LPARAM])
   #--------------------------------------------------------------
