@@ -356,7 +356,7 @@ class Movie
   #--------------------------------------------------------------
   # constants
   #--------------------------------------------------------------
-  REFRESHTIME = Integer((60 * 60) * 3) # each '3' secs will update the screen
+  REFRESHTIME = Integer((60 * 60) * 3) # refresh time.
   MCI = API.function(:void, "mciSendString", [:LPCTSTR, :LPTSTR, :UINT, :HANDLE], "winmm")
   SMESSAGE = API.function(:void, "SendMessage", [:HWND, :UINT, :WPARAM, :LPARAM])
   GSYSTEMM = API.function(:long, "GetSystemMetrics", [:long])
