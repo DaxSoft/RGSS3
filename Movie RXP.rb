@@ -1,13 +1,15 @@
 =begin
  [Movie] by Dax Soft
- 0.5.1 version
+ 0.5.3 version
  Made to Vorum project
+ 
  To use: Movie.new(filename, duration, directory)
    filename -> the name of the movie file, put the extension also
    duration -> duration in seconds of the movie. [IMPORTANT]
    directory -> for default is "./Movies/%s", you just need a
 Movies folder at the main folder of the project.
  If triggered the [Space/C] will end up the movie
+   Movie.skip = false/true | for default is true. 
  [Example]
    Movie.new("movie.avi", 7)
 ----------------------------------------------------------------
@@ -354,12 +356,16 @@ end
 #=================================================================
 class Movie
   #--------------------------------------------------------------
+  # skip
+  #--------------------------------------------------------------
+  @@skip = true
+  def self.skip=(value); @@skip = value || true; end
+  #--------------------------------------------------------------
   # constants
   #--------------------------------------------------------------
   REFRESHTIME = Integer((60 * 60) * 3) # refresh time.
   MCI = API.function(:void, "mciSendString", [:LPCTSTR, :LPTSTR, :UINT, :HANDLE], "winmm")
   SMESSAGE = API.function(:void, "SendMessage", [:HWND, :UINT, :WPARAM, :LPARAM])
-  GSYSTEMM = API.function(:long, "GetSystemMetrics", [:long])
   #--------------------------------------------------------------
   # initialize | for default is on ./Movies, just type the filename
   #--------------------------------------------------------------
@@ -369,20 +375,18 @@ class Movie
     @time = time
     @_ntime = Time.now
     @refreshTime = 0
-    @test = Sprite.new()
-    @test.bitmap = Bitmap.new(64,48)
-    @test.z = 5000
-    @test.visible = false
+    @screen = Sprite.new()
+    @screen.bitmap = Bitmap.new(Graphics.width, Graphics.height)
+    @screen.bitmap.fill_rect(0, 0, Graphics.width, Graphics.height, Color.new(0, 0, 0))
+    @screen.z = 10e3
     sleep(1.0)
+    MCI.call("open \""+@filename+"\" alias FILE style 1073741824 parent " + @hwnd.to_s,0,0,0)
     main
   end
   #--------------------------------------------------------------
   # main method
   #--------------------------------------------------------------
   def main
-    MCI.call("open \""+@filename+"\" alias FILE style 1073741824 parent " + @hwnd.to_s,0,0,0)
-    gmsystem
-    @status = " " * 255
     MCI.call("play FILE",0,0,0)
     update 
   end
@@ -398,7 +402,7 @@ class Movie
         return
       end
       Input.update
-      if Input.trigger?(Input::C)
+      if Input.trigger?(Input::C) && @@skip
         terminate
         break 
         return
@@ -408,8 +412,6 @@ class Movie
         @refreshTime = 0
       end
       @refreshTime += 1
-      @test.bitmap.clear
-      @test.bitmap.draw_text(0,0,64,48,@refreshTime.to_s)
     end
   end
   #--------------------------------------------------------------
@@ -417,25 +419,6 @@ class Movie
   #--------------------------------------------------------------
   def terminate
     MCI.call("close FILE",0,0,0)
-    @test.dispose
-  end
-  #--------------------------------------------------------------
-  # check if the window is with the right size
-  #--------------------------------------------------------------
-  def gmsystem
-    if GSYSTEMM.call(0) == 640
-      Graphics.update
-      sleep(1)
-      Graphics.update
-      sleep(1)
-      Graphics.update
-      sleep(1)
-    end
-  end
-  #--------------------------------------------------------------
-  # unpack the @status
-  #--------------------------------------------------------------
-  def tstatus
-    @status.unpack("aaaa")
+    @screen.dispose
   end
 end
