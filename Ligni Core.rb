@@ -957,7 +957,11 @@ module API
     return api unless block_given?
     return Module.new {
       yield.each { |key, value|
-        define_method(key) { return value.is_a?(Array) ? api.call(*value) : value }
+        define_method(key) { |*vls|
+          vls = vls.is_a?(Array) ? vls : [vls]
+          value.collect! { |i| i = i.nil? ? vls.shift : i }
+          api.call(*value)
+        }
         module_function key
       } if yield.is_a?(Hash)
       define_method(:call) { |*args| api.call(*args) }
@@ -974,7 +978,11 @@ module API
     return api unless block_given?
     return Module.new {
       yield.each { |key, value|
-        define_method(key) { return value.is_a?(Array) ? api.call(*value) : value }
+        define_method(key) { |*vls|
+          vls = vls.is_a?(Array) ? vls : [vls]
+          value.collect! { |i| i = i.nil? ? vls.shift : i }
+          api.call(*value)
+        }
         module_function key
       } if yield.is_a?(Hash)
       define_method(:call) { |*args| api.call(*args) }
@@ -990,7 +998,11 @@ module API
     return api unless block_given?
     return Module.new {
       yield.each { |key, value|
-        define_method(key) { return value.is_a?(Array) ? api.call(*value) : value }
+        define_method(key) { |*vls|
+          vls = vls.is_a?(Array) ? vls : [vls]
+          value.collect! { |i| i = i.nil? ? vls.shift : i }
+          api.call(*value)
+        }
         module_function key
       } if yield.is_a?(Hash)
       define_method(:call) { |*args| api.call(*args) }
@@ -1006,7 +1018,11 @@ module API
     return api unless block_given?
     return Module.new {
       yield.each { |key, value|
-        define_method(key) { return value.is_a?(Array) ? api.call(*value) : value }
+        define_method(key) { |*vls|
+          vls = vls.is_a?(Array) ? vls : [vls]
+          value.collect! { |i| i = i.nil? ? vls.shift : i }
+          api.call(*value)
+        }
         module_function key
       } if yield.is_a?(Hash)
       define_method(:call) { |*args| api.call(*args) }
@@ -2083,7 +2099,7 @@ module Ligni::Behaviour
   # • invoke
   #----------------------------------------------------------------------------
 	def invoke(main_class, met, time, *args)
-		m = main_class.method(met.to_sym)
+		m = main_class.method(met)
 		InvokeData[:identifier].push(met)
 		InvokeData[:list].push(Ligni::Invoke.new(m, time, *args))
 	end
@@ -2091,7 +2107,7 @@ module Ligni::Behaviour
   # • invoke_repeating
   #----------------------------------------------------------------------------
 	def invoke_repeating(main_class, met, time, repeat, *args)
-		m = main_class.method(met.to_sym)
+		m = main_class.method(met)
 		InvokeData[:repeating_identifier].push(met)
 		InvokeData[:repeating_list].push(Ligni::InvokeRepeating.new(m, time, repeat, *args))
 	end
@@ -2225,7 +2241,7 @@ end
 #==============================================================================
 # Uma coleção de cálculos matemáticos comuns.
 #==============================================================================
-Ligni.register("mathf", "ligni", 1.0) {
+Ligni.register(:mathf, "ligni", 1.0) {
 module Ligni::Mathf
 	extend self
   #----------------------------------------------------------------------------
